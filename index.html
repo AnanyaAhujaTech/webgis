@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WebGIS — India GeoJSON</title>
+  <title>WebGIS — India with Madhya Pradesh Toggle</title>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -13,6 +13,14 @@
 </head>
 <body>
   <div id="map"></div>
+
+  <!-- Custom Control Box -->
+  <div id="layer-control" class="leaflet-bar">
+    <label>
+      <input type="checkbox" id="mp-toggle">
+      Madhya Pradesh
+    </label>
+  </div>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
