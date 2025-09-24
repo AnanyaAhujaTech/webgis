@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize map
   const map = L.map('map').setView([22.5937, 78.9629], 5);
 
+  // Base map layer
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
@@ -8,18 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentLayer = null;
 
-  // Define unique colors for each state
-  const stateStyles = {
-    'madhya-pradesh.geojson': { color: #1f78b4, fillColor: '#a6cee3', fillOpacity: 0.3 },
-    'telangana.geojson': { color: '#33a02c', fillColor: '#b2df8a', fillOpacity: 0.3 },
-    'tripura.geojson': { color: '#e31a1c', fillColor: '#fb9a99', fillOpacity: 0.3 },
-    'odisha.geojson': { color: '#ff7f00', fillColor: '#fdbf6f', fillOpacity: 0.3 }
-  };
-
+  // Leaflet control for state selection
   const StateControl = L.Control.extend({
     options: { position: 'bottomright' },
+
     onAdd: function(map) {
       const container = L.DomUtil.create('div', 'leaflet-bar');
+
       container.style.background = 'white';
       container.style.padding = '10px';
       container.style.borderRadius = '6px';
@@ -36,28 +33,33 @@ document.addEventListener('DOMContentLoaded', () => {
         </form>
       `;
 
+      // Stop map from reacting to clicks inside the control
       L.DomEvent.disableClickPropagation(container);
 
+      // Attach event listeners here directly
       const radios = container.querySelectorAll('input[name="state"]');
       radios.forEach(radio => {
         radio.addEventListener('change', () => {
           const file = radio.value;
 
+          // Remove previous layer
           if (currentLayer) map.removeLayer(currentLayer);
 
+          // Load new state GeoJSON
           fetch(file)
             .then(r => {
               if (!r.ok) throw new Error(`HTTP ${r.status}`);
               return r.json();
             })
             .then(data => {
-              const style = stateStyles[file] || { color: 'black', fillColor: 'gray', fillOpacity: 0.3 };
-              currentLayer = L.geoJSON(data, { style }).addTo(map);
+              currentLayer = L.geoJSON(data, {
+                style: { color: 'darkblue', weight: 2, fillColor: 'blue', fillOpacity: 0.3 }
+              }).addTo(map);
               map.fitBounds(currentLayer.getBounds());
             })
             .catch(err => {
               console.error('Error loading file:', err);
-              alert('Could not load ' + file + '. Check console.');
+              alert('Could not load ' + file + '. Check console for details.');
             });
         });
       });
