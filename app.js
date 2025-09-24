@@ -10,10 +10,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // State colors and popup text
   const stateData = {
-    'madhya-pradesh.geojson': { color: '#1f78b4', fillColor: '#a6cee3', fillOpacity: 0.3, popup: 'Madhya Pradesh, a large state in central India, retains landmarks from eras throughout Indian history. Begun in the 10th century, its Hindu and Jain temples at Khajuraho are renowned for their carvings of erotic scenes, most prominently Kandariya Mahadeva, a temple with more than 800 sculptures. The eastern Bandhavgarh and Kanha national parks, noted Bengal tiger sanctuaries, offer guided safaris.' },
-    'telangana.geojson': { color: '#33a02c', fillColor: '#b2df8a', fillOpacity: 0.3, popup: "Telangana is a state in southern India. In the capital of Hyderabad, the Charminar is a 16th-century mosque with 4 arches supporting 4 towering minarets. The monument overlooks the city's long-running Laad Bazaar. Once the seat of the Qutb Shahi dynasty, the sprawling Golconda Fort is a former diamond-trading center. In the city of Warangal, the centuries-old Warangal Fort features carved stone towers and gateways." },
-    'tripura.geojson': { color: '#e31a1c', fillColor: '#fb9a99', fillOpacity: 0.3, popup: 'Tripura is a hilly state in northeast India, bordered on 3 sides by Bangladesh, and home to a diverse mix of tribal cultures and religious groups. In the capital Agartala, the imposing Ujjayanta Palace is set among Mughal gardens, and Gedu Mia’s Mosque has white marble domes and towers. South of the city, Neermahal summer palace sits in the middle of Lake Rudrasagar and blends Hindu and Islamic architectural styles.' },
-    'odisha.geojson': { color: '#ff7f00', fillColor: '#fdbf6f', fillOpacity: 0.3, popup: 'Odisha (formerly Orissa), an eastern Indian state on the Bay of Bengal, is known for its tribal cultures and its many ancient Hindu temples. The capital, Bhubaneswar, is home to hundreds of temples, notably the intricately-carved Mukteshvara. The Lingaraj Temple complex, dating to the 11th century, is set around sacred Bindusagar Lake. The Odisha State Museum is focused on the area’s history and environment.' }
+    'madhya-pradesh.geojson': { 
+      color: '#1f78b4', fillColor: '#a6cee3', fillOpacity: 0.3, 
+      popup: 'Madhya Pradesh, a large state in central India, retains landmarks from eras throughout Indian history. Begun in the 10th century, its Hindu and Jain temples at Khajuraho are renowned for their carvings of erotic scenes, most prominently Kandariya Mahadeva, a temple with more than 800 sculptures. The eastern Bandhavgarh and Kanha national parks, noted Bengal tiger sanctuaries, offer guided safaris.' 
+    },
+    'telangana.geojson': { 
+      color: '#33a02c', fillColor: '#b2df8a', fillOpacity: 0.3, 
+      popup: "Telangana is a state in southern India. In the capital of Hyderabad, the Charminar is a 16th-century mosque with 4 arches supporting 4 towering minarets. The monument overlooks the city's long-running Laad Bazaar. Once the seat of the Qutb Shahi dynasty, the sprawling Golconda Fort is a former diamond-trading center. In the city of Warangal, the centuries-old Warangal Fort features carved stone towers and gateways." 
+    },
+    'tripura.geojson': { 
+      color: '#e31a1c', fillColor: '#fb9a99', fillOpacity: 0.3, 
+      popup: '' // No state-level popup
+    },
+    'odisha.geojson': { 
+      color: '#ff7f00', fillColor: '#fdbf6f', fillOpacity: 0.3, 
+      popup: 'Odisha (formerly Orissa), an eastern Indian state on the Bay of Bengal, is known for its tribal cultures and its many ancient Hindu temples. The capital, Bhubaneswar, is home to hundreds of temples, notably the intricately-carved Mukteshvara. The Lingaraj Temple complex, dating to the 11th century, is set around sacred Bindusagar Lake. The Odisha State Museum is focused on the area’s history and environment.' 
+    }
   };
 
   // Tripura district popups (editable)
@@ -63,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
               return r.json();
             })
             .then(data => {
-              const stateInfo = stateData[file] || { color: 'black', fillColor: 'gray', fillOpacity: 0.3, popup: 'State' };
+              const stateInfo = stateData[file] || { color: 'black', fillColor: 'gray', fillOpacity: 0.3, popup: '' };
 
               currentLayer = L.geoJSON(data, {
                 style: {
@@ -74,13 +86,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 onEachFeature: function(feature, layer) {
                   if (file === 'tripura.geojson') {
-                    // Use district name for Tripura
+                    // Treat each feature as a district
                     const districtName = feature.properties.NAME || feature.properties.name || 'District';
                     const desc = districtData[districtName] || districtName;
-                    layer.bindPopup(`<div style="font-weight:bold; color:white; background-color:darkred; padding:5px 10px; border-radius:5px; white-space: pre-line;">${desc}</div>`);
-                  } else {
-                    // Other states show state description
-                    layer.bindPopup(`<div style="font-weight:bold; color:white; background-color:darkblue; padding:5px 10px; border-radius:5px;">${stateInfo.popup}</div>`);
+                    layer.bindPopup(`<div style="background:white; color:black; padding:5px 8px; border-radius:4px; white-space: pre-line;">${desc}</div>`);
+                  } else if (stateInfo.popup && stateInfo.popup.trim() !== '') {
+                    // Other states
+                    layer.bindPopup(`<div style="background:white; color:black; padding:5px 8px; border-radius:4px;">${stateInfo.popup}</div>`);
                   }
                 }
               }).addTo(map);
