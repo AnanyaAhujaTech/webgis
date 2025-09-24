@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Define unique colors for each state
   const stateStyles = {
-    'madhya-pradesh.geojson': { color: '#1f78b4', fillColor: '#a6cee3', fillOpacity: 0.3 },
+    'madhya-pradesh.geojson': { color: #1f78b4, fillColor: '#a6cee3', fillOpacity: 0.3 },
     'telangana.geojson': { color: '#33a02c', fillColor: '#b2df8a', fillOpacity: 0.3 },
     'tripura.geojson': { color: '#e31a1c', fillColor: '#fb9a99', fillOpacity: 0.3 },
     'odisha.geojson': { color: '#ff7f00', fillColor: '#fdbf6f', fillOpacity: 0.3 }
