@@ -10,10 +10,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Define unique colors and popup text for each state
   const stateData = {
-    'madhya-pradesh.geojson': { color: '#1f78b4', fillColor: '#a6cee3', fillOpacity: 0.3, popup: 'Madhya Pradesh' },
-    'telangana.geojson': { color: '#33a02c', fillColor: '#b2df8a', fillOpacity: 0.3, popup: 'Telangana' },
-    'tripura.geojson': { color: '#e31a1c', fillColor: '#fb9a99', fillOpacity: 0.3, popup: 'Tripura' },
-    'odisha.geojson': { color: '#ff7f00', fillColor: '#fdbf6f', fillOpacity: 0.3, popup: 'Odisha' }
+    'madhya-pradesh.geojson': { 
+      color: '#1f78b4', 
+      fillColor: '#a6cee3', 
+      fillOpacity: 0.3, 
+      popup: 'Madhya Pradesh is known as the heart of India. It has rich history and dense forests.' 
+    },
+    'telangana.geojson': { 
+      color: '#33a02c', 
+      fillColor: '#b2df8a', 
+      fillOpacity: 0.3, 
+      popup: 'Telangana is famous for its culture and the city of Hyderabad.' 
+    },
+    'tripura.geojson': { 
+      color: '#e31a1c', 
+      fillColor: '#fb9a99', 
+      fillOpacity: 0.3, 
+      popup: 'Tripura is a small state in Northeast India with diverse tribal culture.' 
+    },
+    'odisha.geojson': { 
+      color: '#ff7f00', 
+      fillColor: '#fdbf6f', 
+      fillOpacity: 0.3, 
+      popup: 'Odisha is known for its temples, beaches, and rich heritage.' 
+    }
   };
 
   const StateControl = L.Control.extend({
