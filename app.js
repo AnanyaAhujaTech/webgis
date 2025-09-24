@@ -1,51 +1,42 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize map with only OSM tiles
   const map = L.map('map').setView([22.5937, 78.9629], 5);
 
-  // Base map
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
   }).addTo(map);
 
-  // Load India base GeoJSON
-  fetch('india.geojson')
-    .then(r => r.json())
-    .then(data => {
-      const indiaLayer = L.geoJSON(data, {
-        style: { color: '#0077be', weight: 2, fillOpacity: 0.1 }
-      }).addTo(map);
-      map.fitBounds(indiaLayer.getBounds());
-    });
+  let currentLayer = null;
 
-  // Madhya Pradesh layer variable
-  let mpLayer = null;
+  // Attach event listener to radio buttons
+  document.querySelectorAll('#state-control input[type=radio]')
+    .forEach(radio => {
+      radio.addEventListener('change', () => {
+        const file = radio.value;
 
-  // Toggle logic
-  const mpToggle = document.getElementById('mp-toggle');
-  mpToggle.addEventListener('change', () => {
-    if (mpToggle.checked) {
-      // Load MP GeoJSON if not already loaded
-      if (!mpLayer) {
-        fetch('madhya-pradesh.geojson')
-          .then(r => r.json())
+        // Remove previous layer if any
+        if (currentLayer) {
+          map.removeLayer(currentLayer);
+          currentLayer = null;
+        }
+
+        // Load new state GeoJSON
+        fetch(file)
+          .then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          })
           .then(data => {
-            mpLayer = L.geoJSON(data, {
-              style: { color: 'green', weight: 2, fillColor: 'lime', fillOpacity: 0.2 }
+            currentLayer = L.geoJSON(data, {
+              style: { color: 'darkred', weight: 2, fillColor: 'orange', fillOpacity: 0.3 }
             }).addTo(map);
-            map.fitBounds(mpLayer.getBounds());
+            map.fitBounds(currentLayer.getBounds());
           })
           .catch(err => {
-            console.error('Error loading madhya-pradesh.geojson:', err);
-            alert('Could not load Madhya Pradesh GeoJSON file.');
+            console.error('Error loading file:', err);
+            alert('Could not load ' + file + '. Check console for details.');
           });
-      } else {
-        map.addLayer(mpLayer);
-        map.fitBounds(mpLayer.getBounds());
-      }
-    } else {
-      if (mpLayer) {
-        map.removeLayer(mpLayer);
-      }
-    }
-  });
+      });
+    });
 });
