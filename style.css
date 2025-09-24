@@ -20,7 +20,7 @@ html, body {
 #layer-control {
   position: absolute;
   top: 10px;
-  left: 10px;
+  right: 10px;   /* moved from left -> right */
   background: white;
   padding: 8px 12px;
   border-radius: 4px;
