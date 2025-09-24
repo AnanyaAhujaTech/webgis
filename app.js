@@ -13,8 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Leaflet control for state selection
   const StateControl = L.Control.extend({
     options: { position: 'bottomright' },
+
     onAdd: function(map) {
       const container = L.DomUtil.create('div', 'leaflet-bar');
+
       container.style.background = 'white';
       container.style.padding = '10px';
       container.style.borderRadius = '6px';
@@ -34,39 +36,37 @@ document.addEventListener('DOMContentLoaded', () => {
       // Stop map from reacting to clicks inside the control
       L.DomEvent.disableClickPropagation(container);
 
+      // Attach event listeners here directly
+      const radios = container.querySelectorAll('input[name="state"]');
+      radios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          const file = radio.value;
+
+          // Remove previous layer
+          if (currentLayer) map.removeLayer(currentLayer);
+
+          // Load new state GeoJSON
+          fetch(file)
+            .then(r => {
+              if (!r.ok) throw new Error(`HTTP ${r.status}`);
+              return r.json();
+            })
+            .then(data => {
+              currentLayer = L.geoJSON(data, {
+                style: { color: 'darkred', weight: 2, fillColor: 'orange', fillOpacity: 0.3 }
+              }).addTo(map);
+              map.fitBounds(currentLayer.getBounds());
+            })
+            .catch(err => {
+              console.error('Error loading file:', err);
+              alert('Could not load ' + file + '. Check console for details.');
+            });
+        });
+      });
+
       return container;
     }
   });
 
   map.addControl(new StateControl());
-
-  // Wait until control is added to attach event listeners
-  setTimeout(() => {
-    const radios = document.querySelectorAll('input[name="state"]');
-    radios.forEach(radio => {
-      radio.addEventListener('change', () => {
-        const file = radio.value;
-
-        // Remove previous layer
-        if (currentLayer) map.removeLayer(currentLayer);
-
-        // Fetch selected state GeoJSON
-        fetch(file)
-          .then(r => {
-            if (!r.ok) throw new Error(`HTTP ${r.status}`);
-            return r.json();
-          })
-          .then(data => {
-            currentLayer = L.geoJSON(data, {
-              style: { color: 'darkred', weight: 2, fillColor: 'orange', fillOpacity: 0.3 }
-            }).addTo(map);
-            map.fitBounds(currentLayer.getBounds());
-          })
-          .catch(err => {
-            console.error('Error loading file:', err);
-            alert('Could not load ' + file + '. Check console for details.');
-          });
-      });
-    });
-  }, 100); // small delay to ensure DOM exists
 });
