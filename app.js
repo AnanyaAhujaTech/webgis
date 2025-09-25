@@ -12,19 +12,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const stateData = {
     'madhya-pradesh.geojson': { 
       color: '#1f78b4', fillColor: '#a6cee3', fillOpacity: 0.3, 
-      popup: 'Number of verified claims: 56\nNumber of pending claims: 17\nNumber of water bodies: 3\nAgricultural Land: 767 acres\n Forest Land: 456 acres' 
+      popup: 'Number of verified claims: 56<br>Number of pending claims: 17<br>Number of water bodies: 3<br>Agricultural Land: 767 acres<br>Forest Land: 456 acres' 
     },
     'telangana.geojson': { 
       color: '#33a02c', fillColor: '#b2df8a', fillOpacity: 0.3, 
-      popup: "Number of verified claims: 47\nNumber of pending claims: 62\nNumber of water bodies: 5\nAgricultural Land: 3782 acres\n Forest Land: 329 acres" 
+      popup: "Number of verified claims: 47<br>Number of pending claims: 62<br>Number of water bodies: 5<br>Agricultural Land: 3782 acres<br>Forest Land: 329 acres" 
     },
     'tripura.geojson': { 
       color: '#e31a1c', fillColor: '#fb9a99', fillOpacity: 0.3, 
-      popup: 'Number of verified claims: 77\nNumber of pending claims: 65\nNumber of water bodies: 2\nAgricultural Land: 782 acres\n Forest Land: 399 acres'
+      popup: 'Number of verified claims: 77<br>Number of pending claims: 65<br>Number of water bodies: 2<br>Agricultural Land: 782 acres<br>Forest Land: 399 acres'
     },
     'odisha.geojson': { 
       color: '#ff7f00', fillColor: '#fdbf6f', fillOpacity: 0.3, 
-      popup: 'Number of verified claims: 62\nNumber of pending claims: 12\nNumber of water bodies: 6\nAgricultural Land: 378 acres\n Forest Land: 3379 acres' 
+      popup: 'Number of verified claims: 62<br>Number of pending claims: 12<br>Number of water bodies: 6<br>Agricultural Land: 378 acres<br>Forest Land: 3379 acres' 
     }
   };
 
