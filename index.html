@@ -28,23 +28,9 @@
 
     <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 20px 0;">
     
-    <h2>Land Use Layers</h2>
-    <div class="control-group landuse-control">
-      <label>Select Layer to Highlight:</label>
-      <form id="landuse-form">
-        <label>
-          <input type="radio" name="landuse" value="forest" id="forest-radio" disabled> 
-          Forests 🌲
-        </label><br>
-        <label>
-          <input type="radio" name="landuse" value="agriculture" id="agri-radio" disabled> 
-          Agricultural Land 🌾
-        </label>
-        <label>
-          <input type="radio" name="landuse" value="none" checked> 
-          None
-        </label>
-      </form>
+    <h2>Statistics (up to 31.7.2025)</h2>
+    <div id="statistics-panel">
+        <p>Select a state to view statistics.</p>
     </div>
 
     <div id="status-message" class="status-message"></div>
@@ -53,7 +39,6 @@
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
