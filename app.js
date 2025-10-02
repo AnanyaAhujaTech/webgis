@@ -9,13 +9,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }).addTo(map);
 
   let currentLayer = null; // State or District GeoJSON layer
-  let fraClaimsLayer = null; // New layer for FRA claims
-  
-  // Define FRA Polygons (The 3, 5, 4, 6, 7 polygons as required)
+  let fraClaimsLayer = null; // Layer for FRA claims
+
+  // --- FRA Polygons Data (Unchanged) ---
   const fraClaimsGeoJSON = {
     type: "FeatureCollection",
     features: [
-      // Madhya Pradesh: Burhanpur (3) - Use simple mock coordinates
+      // Madhya Pradesh: Burhanpur (3) - Mock coordinates
       { type: "Feature", properties: { district: "Burhanpur", state: "Madhya Pradesh", count: 1 }, geometry: { type: "Polygon", coordinates: [[[76.22, 21.32], [76.24, 21.32], [76.24, 21.30], [76.22, 21.30], [76.22, 21.32]]] }},
       { type: "Feature", properties: { district: "Burhanpur", state: "Madhya Pradesh", count: 2 }, geometry: { type: "Polygon", coordinates: [[[76.30, 21.40], [76.32, 21.40], [76.32, 21.38], [76.30, 21.38], [76.30, 21.40]]] }},
       { type: "Feature", properties: { district: "Burhanpur", state: "Madhya Pradesh", count: 3 }, geometry: { type: "Polygon", coordinates: [[[76.15, 21.25], [76.17, 21.25], [76.17, 21.23], [76.15, 21.23], [76.15, 21.25]]] }},
@@ -48,8 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ]
   };
 
-  // The stateData object remains the same
-  // ... (stateData object is unchanged) ...
+  // --- State Data (Unchanged) ---
   const stateData = {
     'madhya-pradesh': {
       name: 'Madhya Pradesh', color: '#1f78b4', fillColor: '#a6cee3',
@@ -105,21 +104,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-
   // --- DOM Elements ---
-
   const stateDropdown = document.getElementById('state-dropdown');
   const districtDropdown = document.getElementById('district-dropdown');
-  const statusMessageDiv = document.getElementById('status-message');
-  
-  // 👇 NEW DOM Elements 👇
   const statisticsSidebar = document.getElementById('statistics-sidebar');
   const statisticsPanel = document.getElementById('statistics-panel');
+  const statusMessageDiv = document.getElementById('status-message');
   const mapElement = document.getElementById('map');
   const fraClaimsRadio = document.getElementById('fra-claims-radio');
-  const fraDateInput = document.getElementById('fra-date');
-  const otherLayerRadios = document.querySelectorAll('input[name="map-layer"]:not(#fra-claims-radio)'); // Placeholder for other layers
-  // 👆 NEW DOM Elements 👆
+  const stateDistrictRadio = document.getElementById('state-district-radio');
 
   // --- Core Functions ---
 
@@ -128,18 +121,14 @@ document.addEventListener('DOMContentLoaded', () => {
       map.removeLayer(currentLayer);
       currentLayer = null;
     }
-    // Statistics panel cleared only when a new state selection clears the map OR when the whole system is reset (not on district change)
-    // statisticsPanel.innerHTML = '<p>Select a state to view statistics.</p>'; 
   }
-  
-  // 👇 NEW Clear FRA Layer Function 👇
+
   function clearFraLayer() {
     if (fraClaimsLayer) {
       map.removeLayer(fraClaimsLayer);
       fraClaimsLayer = null;
     }
   }
-  // 👆 NEW Clear FRA Layer Function 👆
 
   function updateStatus(message, isError = false) {
     statusMessageDiv.innerHTML = message;
@@ -147,18 +136,17 @@ document.addEventListener('DOMContentLoaded', () => {
     statusMessageDiv.style.backgroundColor = isError ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)';
   }
 
-  // 👇 Modified renderStatistics to also control the right sidebar visibility 👇
   function renderStatistics(stateKey) {
     if (!stateKey || !stateData[stateKey]) {
       statisticsPanel.innerHTML = '<p>Select a state to view statistics.</p>';
-      statisticsSidebar.classList.remove('visible');
+      statisticsSidebar.classList.add('hidden');
       mapElement.classList.remove('stats-visible');
       return;
     }
     
     const stats = stateData[stateKey].stats;
     
-    // Function to format the three-part stats (Individual, Community, Total)
+    // Function to format the three-part stats
     const formatThreePartStat = (title, data, unit = '') => `
       <strong>${title}</strong>
       <ul>
@@ -169,25 +157,26 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     
     statisticsPanel.innerHTML = `
-      ${formatThreePartStat('No. of claims received upto 31.7.2025', stats.claims_received)}
-      ${formatThreePartStat('No. of titles distributed upto 31.7.2025', stats.titles_distributed)}
-      ${formatThreePartStat('Extent of forest land for which titles distributed', stats.land_distributed, 'acres')}
+      ${formatThreePartStat('Claims received', stats.claims_received)}
+      ${formatThreePartStat('Titles distributed', stats.titles_distributed)}
+      ${formatThreePartStat('Land distributed', stats.land_distributed, 'acres')}
       
-      <strong>No. of claims rejected:</strong> ${stats.claims_rejected}<br>
-      <strong>Total No. of Claims Disposed off:</strong> ${stats.claims_disposed}<br>
+      <strong>Rejected Claims:</strong> ${stats.claims_rejected}<br>
+      <strong>Total Disposed:</strong> ${stats.claims_disposed}<br>
       
       <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 10px 0;">
       
-      <strong>% of Claims disposed off w.r.t. claims received:</strong> ${stats.percent_disposed}<br>
-      <strong>% of Titles distributed over number of claims received:</strong> ${stats.percent_titles}
+      <strong>% Disposed:</strong> ${stats.percent_disposed}<br>
+      <strong>% Titles over Claims:</strong> ${stats.percent_titles}
     `;
     
-    statisticsSidebar.classList.add('visible');
+    // Show the sidebar and adjust the map
+    statisticsSidebar.classList.remove('hidden');
     mapElement.classList.add('stats-visible');
+    // Ensure map redraws correctly after layout change
+    setTimeout(() => { map.invalidateSize(); }, 300); 
   }
-  // 👆 Modified renderStatistics 👆
-  
-  // 👇 NEW FRA Layer Toggling Function 👇
+
   function toggleFraLayer(stateKey, enable) {
       clearFraLayer();
 
@@ -202,17 +191,16 @@ document.addEventListener('DOMContentLoaded', () => {
           
           fraClaimsLayer = L.geoJSON({ type: "FeatureCollection", features: filteredFeatures }, {
               style: (feature) => ({
-                  color: '#FF0000', // Red border
+                  color: '#FF0000',
                   fillColor: '#FF0000',
                   fillOpacity: 0.7,
                   weight: 1
               }),
               onEachFeature: (feature, layer) => {
-                  // Attach a popup/dialogue box
-                  // The polygon properties are placeholders, you will fill in the actual data.
                   const props = feature.properties;
+                  // Pop-up structure as requested
                   const popupContent = `
-                      <strong>Community Forest Right Claim</strong><br>
+                      <strong>Community Forest Right Claim (Plot #${props.count})</strong><br>
                       <hr style="border-color: #ddd;">
                       1. Name(s) of the holder(s) of community forest right: ${props.holderName || 'N/A (Add details)'}<br>
                       2. Village/Gram Sabha: ${props.village || 'N/A (Add details)'}<br>
@@ -225,17 +213,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }).addTo(map);
 
           updateStatus(`${filteredFeatures.length} FRA claim area(s) for ${stateConfig.name} plotted.`);
-          
-          // Optional: Zoom to the plotted polygons
-          // map.fitBounds(fraClaimsLayer.getBounds());
-          
-      } else if (enable) {
-          updateStatus('Select a state first to view FRA claims.', false);
-      } else {
-          updateStatus('FRA claims layer cleared.');
       }
   }
-  // 👆 NEW FRA Layer Toggling Function 👆
 
 
   // --- Initialization: Populate State Dropdown ---
@@ -247,71 +226,13 @@ document.addEventListener('DOMContentLoaded', () => {
     stateDropdown.appendChild(option);
   });
   
-  // Also, set the default layer radio button (State boundary)
-  const defaultLayerRadio = document.querySelector('input[name="map-layer"][value="state-district"]');
-  if (!defaultLayerRadio) {
-      // Create a default radio button if one doesn't exist (assuming state/district is default)
-      const defaultRadioHtml = `
-          <div class="control-group layer-control">
-              <label>
-                  <input type="radio" name="map-layer" value="state-district" checked>
-                  State/District Boundary
-              </label>
-          </div>
-      `;
-      // Prepend it before the FRA control
-      document.querySelector('.layer-control').insertAdjacentHTML('beforebegin', defaultRadioHtml);
-      document.getElementById('state-dropdown').closest('.control-group').nextElementSibling.nextElementSibling.nextElementSibling.checked = true;
-  }
-  
-  // --- Event Handlers (Modified) ---
+  // --- Event Handlers (Modified for new Layer Logic) ---
 
-  function handleStateSelection(stateKey) {
+  function loadStateBoundary(stateKey) {
+    if (fraClaimsRadio.checked) return; // Don't load boundary if FRA is active
+    
     clearLayer();
-    clearFraLayer(); // Ensure FRA layer is cleared on new state selection
-
-    // ... (rest of the state boundary loading logic is the same) ...
-    
-    // Set current bounds for the state (even if not used for query, helpful for map state)
-    let currentBounds = null;
-    
-    districtDropdown.innerHTML = '<option value="" disabled selected>-- Select a District --</option>';
-    districtDropdown.disabled = true;
-    
-    // 👇 Hide right panel and reset FRA radio if state is deselected 👇
-    if (!stateKey) {
-      renderStatistics(null); // Hide stats panel
-      fraClaimsRadio.checked = false;
-      updateStatus('Please select a State to begin.');
-      return;
-    }
-    // 👆 Hide right panel and reset FRA radio if state is deselected 👆
-
     const config = stateData[stateKey];
-    updateStatus(`State selected: ${config.name}. Loading state boundary...`);
-    
-    // Render the statistics immediately
-    renderStatistics(stateKey);
-    
-    // 👇 If FRA radio is checked, toggle the layer now for the newly selected state 👇
-    if (fraClaimsRadio.checked) {
-        toggleFraLayer(stateKey, true);
-    }
-    // 👆 If FRA radio is checked, toggle the layer now for the newly selected state 👆
-
-    config.districts.forEach(distName => {
-      const option = document.createElement('option');
-      option.value = distName;
-      option.textContent = distName;
-      districtDropdown.appendChild(option);
-    });
-    districtDropdown.disabled = false;
-    
-    // Ensure state-district radio is checked when selecting a state
-    const stateDistrictRadio = document.querySelector('input[name="map-layer"][value="state-district"]');
-    if (stateDistrictRadio) stateDistrictRadio.checked = true;
-
-
     const stateFile = `${stateKey}.geojson`;
     
     fetch(stateFile)
@@ -324,38 +245,65 @@ document.addEventListener('DOMContentLoaded', () => {
           style: {
             color: config.color,
             fillColor: config.fillColor,
-            fillOpacity: config.fillOpacity,
+            fillOpacity: config.fillOpacity || 0.2,
             weight: 2
           }
         }).addTo(map);
 
         map.fitBounds(currentLayer.getBounds());
-        
-        updateStatus(`State layer for ${config.name} loaded. Select a district.`);
+        updateStatus(`State boundary for ${config.name} loaded.`);
       })
       .catch(err => {
         console.error(`Error loading state file ${stateFile}:`, err);
-        updateStatus(`Could not load ${config.name} state file. Check the console.`, true);
+        updateStatus(`Could not load ${config.name} state boundary.`, true);
       });
+  }
+  
+  function handleStateSelection(stateKey) {
+    clearLayer();
+    clearFraLayer();
+    districtDropdown.innerHTML = '<option value="" disabled selected>-- Select a District --</option>';
+    districtDropdown.disabled = true;
+    
+    if (!stateKey) {
+      renderStatistics(null);
+      stateDistrictRadio.checked = true; // Reset layer choice
+      updateStatus('Please select a State to begin.');
+      return;
+    }
+
+    // Render statistics and populate district dropdown
+    const config = stateData[stateKey];
+    renderStatistics(stateKey);
+
+    config.districts.forEach(distName => {
+      const option = document.createElement('option');
+      option.value = distName;
+      option.textContent = distName;
+      districtDropdown.appendChild(option);
+    });
+    districtDropdown.disabled = false;
+    
+    // Check which layer is active and load it
+    if (fraClaimsRadio.checked) {
+        toggleFraLayer(stateKey, true);
+    } else {
+        stateDistrictRadio.checked = true;
+        loadStateBoundary(stateKey);
+    }
   }
 
   function handleDistrictSelection(stateKey, districtName) {
-    clearLayer(); 
-    clearFraLayer(); // Clear FRA layer on district change
-    
-    // Ensure state-district radio is checked
-    const stateDistrictRadio = document.querySelector('input[name="map-layer"][value="state-district"]');
-    if (stateDistrictRadio) stateDistrictRadio.checked = true;
-
-    // Render stats remains for context
-    renderStatistics(stateKey); 
-    
-    if (!districtName) {
-        handleStateSelection(stateKey); // Fallback to state selection logic
+    // If FRA layer is checked, only select it and return.
+    if (fraClaimsRadio.checked) {
+        toggleFraLayer(stateKey, true);
         return;
     }
+    
+    clearLayer();
+    renderStatistics(stateKey); // Re-render stats for context
+    if (!districtName) return loadStateBoundary(stateKey);
 
-    // ... (rest of the district loading logic is the same) ...
     const config = stateData[stateKey];
     const distFile = `${stateKey}Dist.geojson`;
     updateStatus(`District selected: ${districtName}. Loading district layer...`);
@@ -369,7 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let selectedFeatureBounds = null;
         
         const styleFeature = (feature) => {
-          // Using 'district' property
           const isSelected = feature.properties && feature.properties.district === districtName;
 
           if (isSelected) {
@@ -380,11 +327,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return {
               color: config.color, 
               fillColor: config.fillColor, 
-              fillOpacity: 0.6, // Increased transparency
+              fillOpacity: 0.6,
               weight: 3
             };
           }
-          // Style for other districts in the file (dimmed)
           return {
             color: '#444', 
             fillColor: '#888',
@@ -402,23 +348,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateStatus(`District layer for ${districtName} loaded.`);
-      })
-      .catch(err => {
-        console.error(`Error loading district file ${distFile}:`, err);
-        updateStatus(`Could not load district file for ${config.name}. Check the console.`, true);
       });
   }
   
   // --- Event Listeners ---
 
-  // State Dropdown Change (unchanged)
+  // State Dropdown Change
   stateDropdown.addEventListener('change', (event) => {
     const stateKey = event.target.value;
     districtDropdown.value = ""; 
     handleStateSelection(stateKey);
   });
 
-  // District Dropdown Change (slightly modified fallback)
+  // District Dropdown Change
   districtDropdown.addEventListener('change', (event) => {
     const districtName = event.target.value;
     const stateKey = stateDropdown.value; 
@@ -428,47 +370,36 @@ document.addEventListener('DOMContentLoaded', () => {
     } 
   });
   
-  // 👇 NEW Layer Radio Button Listener 👇
+  // Layer Radio Button Listener
   document.querySelectorAll('input[name="map-layer"]').forEach(radio => {
       radio.addEventListener('change', (event) => {
           const selectedLayer = event.target.value;
           const stateKey = stateDropdown.value;
+          const districtName = districtDropdown.value;
           
           if (!stateKey) {
               updateStatus('Please select a State before choosing a layer.', true);
-              event.target.checked = false;
-              // Revert to default/uncheck all
-              const defaultRadio = document.querySelector('input[name="map-layer"][value="state-district"]');
-              if (defaultRadio) defaultRadio.checked = false;
-              clearLayer();
-              clearFraLayer();
+              stateDistrictRadio.checked = true; // Revert to default
               return;
           }
           
           if (selectedLayer === 'fra-claims') {
-              // Clear state/district boundary layers
+              // Clear boundaries and load FRA layer
               clearLayer();
-              // Load FRA layer
               toggleFraLayer(stateKey, true);
           } else if (selectedLayer === 'state-district') {
-              // Clear FRA layer
+              // Clear FRA layer and load boundary layer
               clearFraLayer();
-              // Re-run state selection logic (which handles boundary/district load)
-              if (districtDropdown.value && districtDropdown.value !== "-- Select a District --") {
-                  handleDistrictSelection(stateKey, districtDropdown.value);
+              if (districtName && districtName !== "-- Select a District --") {
+                  handleDistrictSelection(stateKey, districtName);
               } else {
-                  handleStateSelection(stateKey);
+                  loadStateBoundary(stateKey);
               }
           }
-          
-          // The date field is purely cosmetic in this implementation
       });
   });
-  // 👆 NEW Layer Radio Button Listener 👆
 
   // Initial state logic
-  renderStatistics(null); // Ensures right panel is hidden on load
-  
-  // Initial message
+  renderStatistics(null); // Ensure left panel is hidden on load
   updateStatus('Welcome to the WebGIS system. Select a state to begin.');
 });
