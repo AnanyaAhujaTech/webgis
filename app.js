@@ -11,32 +11,58 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentLayer = null; // To hold the currently displayed GeoJSON layer (state or district)
 
   // --- Configuration ---
-
+  // NOTE: The 'key' (e.g., 'madhya-pradesh') is used to construct filenames: key + '.geojson' and key + 'Dist.geojson'
   const stateData = {
     'madhya-pradesh': { 
       name: 'Madhya Pradesh',
       color: '#1f78b4', // Primary color
       fillColor: '#a6cee3', // Fill color
-      // Mock districts (ASSUMPTION: district features in the GeoJSON have a 'name' property matching these)
-      districts: ['Indore', 'Bhopal', 'Gwalior', 'Jabalpur', 'Rewa', 'Sagar']
+      districts: [
+        'Burhanpur', 'Seoni', 'Alirajpur', 'Chhindwara', 'Harda', 'Khargone', 'Khandwa', 
+        'Balaghat', 'Barwani', 'Betul', 'Morena', 'Bhind', 'Gwalior', 'Sheopur', 
+        'Shivpuri', 'Tikamgarh', 'Neemuch', 'Rewa', 'Satna', 'Guna', 'Ashoknagar', 
+        'Mandsaur', 'Singrauli', 'Sidhi', 'Sagar', 'Damoh', 'Shajapur', 'Vidisha', 
+        'Rajgarh', 'Shahdol', 'Katni', 'Umaria', 'Ratlam', 'Bhopal', 'Ujjain', 
+        'Raisen', 'Sehore', 'Jabalpur', 'Dewas', 'Anuppur', 'Jhabua', 'Dindori', 
+        'Narsinghpur', 'Dhar', 'Indore', 'Mandla', 'Hoshangabad', 'Agar Malwa', 
+        'Datia', 'Chhatarpur', 'Panna', 'Niwari'
+      ]
     },
     'telangana': { 
       name: 'Telangana',
       color: '#33a02c', 
       fillColor: '#b2df8a',
-      districts: ['Hyderabad', 'Warangal', 'Nizamabad', 'Khammam', 'Karimnagar']
+      districts: [
+        'Adilabad', 'Hyderabad', 'Jagtial', 'Jangaon', 'Mulugu', 'Jogulamba Gadwal', 
+        'Kamareddy', 'Karimnagar', 'Khammam', 'Komaram Bheem', 'Mahabubabad', 
+        'Mahabubnagar', 'Mancherial', 'Medak', 'Medchal Malkajgiri', 'Nagarkurnool', 
+        'Nalgonda', 'Nirmal', 'Nizamabad', 'Peddapalli', 'Rajanna Sircilla', 
+        'Ranga Reddy', 'Sangareddy', 'Siddipet', 'Suryapet', 'Vikarabad', 
+        'Wanaparthy', 'Warangal Rural', 'Warangal Urban', 'Yadadri Bhuvanagiri',
+        'Bhadradri Kothagudem', 'Jayashankar Bhupalapally', 'Narayanpet'
+      ]
     },
     'tripura': { 
       name: 'Tripura',
       color: '#e31a1c', 
       fillColor: '#fb9a99',
-      districts: ['West Tripura', 'Dhalai', 'Khowai', 'Gomati']
+      districts: [
+        'North Tripura', 'Dhalai', 'Sipahijala', 'Gomati', 'Khowai', 
+        'West Tripura', 'South Tripura', 'Unokoti'
+      ]
     },
     'odisha': { 
       name: 'Odisha',
       color: '#ff7f00', 
       fillColor: '#fdbf6f',
-      districts: ['Cuttack', 'Bhubaneswar', 'Ganjam', 'Puri', 'Sambalpur']
+      districts: [
+        'Bhadrak', 'Dhenkanal', 'Jajpur', 'Subarnapur', 'Nuapada', 'Balangir', 
+        'Boudh', 'Cuttack', 'Kandhamal', 'Nayagarh', 'Khordha', 'Kalahandi', 
+        'Jagatsinghpur', 'Puri', 'Nabarangapur', 'Rayagada', 'Koraput', 
+        'Malkangiri', 'Angul', 'Kendrapara', 'Ganjam', 'Gajapati', 'Mayurbhanj', 
+        'Sundargarh', 'Kendujhar', 'Balasore', 'Jharsuguda', 'Bargarh', 
+        'Deogarh', 'Sambalpur'
+      ]
     }
   };
 
@@ -117,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .catch(err => {
         console.error(`Error loading state file ${stateFile}:`, err);
-        updateStatus(`Could not load ${config.name} state file.`, true);
+        updateStatus(`Could not load ${config.name} state file. Check the console.`, true);
       });
   }
 
@@ -139,8 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Define the style function to highlight the selected district
         const styleFeature = (feature) => {
-          // ASSUMPTION: The district name is stored in feature.properties.name
-          const isSelected = feature.properties && feature.properties.name === districtName;
+          // *** FIX APPLIED: Using 'district' property ***
+          const isSelected = feature.properties && feature.properties.district === districtName;
 
           if (isSelected) {
             return {
@@ -161,28 +187,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Load the GeoJSON with conditional styling
         currentLayer = L.geoJSON(data, {
-          style: styleFeature,
-          // We can optionally filter to only show the selected district, 
-          // but highlighting within the whole file is often clearer.
-          // filter: (feature) => feature.properties.name === districtName // If only showing one boundary
+          style: styleFeature
         }).addTo(map);
 
         // Find the boundary of the selected district to zoom in
-        const selectedFeature = data.features.find(f => f.properties.name === districtName);
+        // *** FIX APPLIED: Using 'district' property ***
+        const selectedFeature = data.features.find(f => f.properties.district === districtName);
         if (selectedFeature) {
           // Temporarily create a layer for the single feature to get its bounds
           const tempLayer = L.geoJSON(selectedFeature);
           map.fitBounds(tempLayer.getBounds());
           updateStatus(`Successfully loaded and highlighted ${districtName}.`);
         } else {
-           // Fallback zoom to the whole district file bounds
+          // Fallback zoom to the whole district file bounds
           map.fitBounds(currentLayer.getBounds());
-          updateStatus(`Successfully loaded district layer for ${config.name}, but could not find specific bounds for ${districtName}.`, true);
+          updateStatus(`Successfully loaded district layer for ${config.name}, but could not find specific bounds for ${districtName}. Check GeoJSON 'district' property.`, true);
         }
       })
       .catch(err => {
         console.error(`Error loading district file ${distFile}:`, err);
-        updateStatus(`Could not load district file for ${config.name}.`, true);
+        updateStatus(`Could not load district file for ${config.name}. Check the console.`, true);
       });
   }
   
