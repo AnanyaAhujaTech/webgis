@@ -4,19 +4,21 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WebGIS — State Selector</title>
+
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="sidebar">
-    <h3>Select a State</h3>
-    <select id="stateDropdown">
-      <option value="">-- Choose a state --</option>
-      <option value="madhya-pradesh.geojson">Madhya Pradesh</option>
-      <option value="telangana.geojson">Telangana</option>
-      <option value="tripura.geojson">Tripura</option>
-      <option value="odisha.geojson">Odisha</option>
-    </select>
+    <h2>State Selector</h2>
+    <div class="control-group">
+      <label for="state-dropdown">Select a State:</label>
+      <select id="state-dropdown" name="state">
+        <option value="" disabled selected>-- Choose a State --</option>
+        </select>
+    </div>
+    <div id="layer-info" style="margin-top: 15px; font-size: 0.9em;">
+      </div>
   </div>
 
   <div id="map"></div>
