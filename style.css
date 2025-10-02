@@ -33,10 +33,15 @@ html, body {
     box-shadow: -2px 0 8px rgba(0,0,0,0.3);
     z-index: 1000;
     overflow-y: auto;
+    /* Added transition for smooth hide/show */
+    transition: transform 0.3s ease, width 0.3s ease;
 }
 
+/* New: Class to hide the stats sidebar by moving it off-screen */
 #stats-sidebar.hidden {
-    display: none;
+    transform: translateX(300px); /* Move off-screen to the right */
+    width: 0; /* Collapse width */
+    padding: 0;
 }
 
 #stats-sidebar h2 {
@@ -81,7 +86,7 @@ label {
   font-weight: bold;
 }
 
-#state-dropdown, #district-dropdown {
+#state-dropdown, #district-dropdown, #claim-date {
   width: 100%;
   padding: 10px;
   border-radius: 8px;
@@ -107,25 +112,37 @@ label {
   color: #c8e6c9;
 }
 
-/* Map Styling - CRITICAL: Must fit between two sidebars */
+/* Map Styling - Uses dynamic calculation with CSS variables controlled by JS for map width */
 #map {
-  width: calc(100% - 580px); /* 100% - (280px Left + 300px Right) */
+  width: var(--map-width, 100%); /* Default to 100% until JS sets initial width */
   height: 100vh;
-  margin-left: 280px;
+  margin-left: 0; /* Start at 0 */
   transition: all 0.3s ease;
 }
 
-/* Responsive adjustment for small screens */
-@media (max-width: 1200px) {
-    /* Hide right sidebar completely on smaller screens for mobile usability */
-    #stats-sidebar {
-        display: none !important;
-        width: 0;
-    }
+/* Media Queries for initial layout and responsiveness */
+
+/* Desktop view: Map takes space between left panel and right panel/edge */
+@media (min-width: 1201px) {
     #map {
-        width: calc(100% - 280px); /* Map takes space next to only the left panel */
+        /* Initial state: Map covers 100% - 280px (left sidebar) */
+        width: calc(100% - 280px);
+        margin-left: 280px;
     }
 }
+
+/* Smaller Desktop/Tablet view: Map next to only the left panel */
+@media (max-width: 1200px) {
+    #stats-sidebar {
+        /* Ensure it's off screen if map is not adjusted */
+        transform: translateX(300px); 
+    }
+    #map {
+        width: calc(100% - 280px); 
+        margin-left: 280px;
+    }
+}
+
 
 @media (max-width: 768px) {
   #sidebar {
