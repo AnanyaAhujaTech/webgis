@@ -3,22 +3,29 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WebGIS — State and District Selector</title>
+  <title>WebGIS — State, District & FRA Claims</title>
 
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  
+  <!-- LEFT SIDEBAR: Controls -->
   <div id="sidebar">
     <h1>WebGIS Control Panel</h1>
     
+    <!-- State Dropdown -->
     <div class="control-group">
       <label for="state-dropdown">Select State:</label>
       <select id="state-dropdown" name="state">
         <option value="" disabled selected>-- Choose a State --</option>
-        </select>
+        <!-- Options populated by app.js -->
+      </select>
     </div>
 
+    <!-- District Dropdown (Initially disabled) -->
     <div class="control-group">
       <label for="district-dropdown">Select District:</label>
       <select id="district-dropdown" name="district" disabled>
@@ -28,17 +35,35 @@
 
     <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 20px 0;">
     
-    <h2>Statistics (up to 31.7.2025)</h2>
-    <div id="statistics-panel">
-        <p>Select a state to view statistics.</p>
+    <!-- FRA Claims Layer Control -->
+    <h2>FRA Claim Visualization</h2>
+    <div class="control-group">
+      <label>
+        <input type="checkbox" id="claims-checkbox" disabled> 
+        Display Areas claimed under FRA
+      </label>
+      
+      <div style="margin-top: 10px;">
+        <label for="claim-date" style="font-size: 0.9em; font-weight: normal;">Select Data Date:</label>
+        <input type="date" id="claim-date" value="2025-07-31" disabled style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; color: #333;">
+      </div>
     </div>
 
+    <!-- Feedback Message Area -->
     <div id="status-message" class="status-message"></div>
   </div>
 
+  <!-- RIGHT SIDEBAR: Statistics -->
+  <div id="stats-sidebar" class="hidden">
+    <h2><span id="state-name-header">State</span> Statistics (up to 31.7.2025)</h2>
+    <div id="statistics-panel">
+        <p>Select a state to load data.</p>
+    </div>
+  </div>
+
+  <!-- Map Container -->
   <div id="map"></div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
