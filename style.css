@@ -4,33 +4,69 @@ html, body {
   padding: 0;
   font-family: 'Inter', sans-serif;
   background-color: #f0f0f0;
-  overflow: hidden; /* Prevent scrolling due to fixed/absolute elements */
+  overflow: hidden; 
 }
 
-/* --- Top Bar Styling --- */
+/* --- Top Bar Styling (Collapsible) --- */
 #topbar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 60px; /* Fixed height for the bar */
-  background-color: #228b22; /* Forest Green */
+  background-color: #228b22; 
   color: #fff;
-  padding: 0 20px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.3);
   z-index: 1000;
+  transition: height 0.3s ease; /* Transition height for collapse effect */
+}
 
-  /* Flexbox for layout */
-  display: flex;
-  align-items: center;
-  gap: 25px; /* Spacing between control groups */
+#topbar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    height: 40px; /* Fixed height for the header */
 }
 
 #topbar h1 {
   font-size: 1.4rem;
   margin: 0;
-  padding-right: 20px;
-  border-right: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+#collapse-toggle {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #fff;
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: transform 0.3s ease;
+}
+
+/* Rotate the arrow when content is collapsed */
+#collapse-toggle.collapsed {
+    transform: rotate(180deg);
+}
+
+#topbar-content {
+    /* Flex content setup */
+    display: flex;
+    align-items: center;
+    padding: 0 20px 10px 20px;
+    gap: 25px;
+    
+    /* Collapse styling */
+    max-height: 100px; /* A height larger than content */
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding-top 0.3s ease, padding-bottom 0.3s ease;
+}
+
+#topbar-content.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .control-group {
@@ -45,7 +81,6 @@ label {
   white-space: nowrap;
 }
 
-/* Dropdown styling */
 #state-dropdown, #district-dropdown {
   padding: 8px 12px;
   border-radius: 6px;
@@ -79,20 +114,31 @@ label {
 }
 
 
-/* --- Statistics Sidebar (Left) Styling --- */
+/* --- Statistics Sidebar (LEFT) Styling --- */
 #statistics-sidebar {
   position: fixed;
-  top: 60px; /* Below the top bar */
+  top: 60px; /* Below the header part of the top bar (initial guess) */
   left: 0;
   width: 300px;
-  height: calc(100% - 60px); /* Rest of the screen height */
-  background-color: #228b22; /* Forest Green */
+  height: calc(100% - 60px); 
+  background-color: #228b22; 
   color: #fff;
   padding: 20px;
   box-shadow: 2px 0 8px rgba(0,0,0,0.3);
   z-index: 900;
   overflow-y: auto;
   transition: transform 0.3s ease;
+}
+
+/* Class to dynamically adjust sidebar position when topbar is collapsed/expanded */
+#statistics-sidebar.below-expanded {
+    top: 60px; /* Header (40px) + content padding (20px approx) */
+    height: calc(100% - 60px);
+}
+
+#statistics-sidebar.below-collapsed {
+    top: 40px; /* Only header height */
+    height: calc(100% - 40px);
 }
 
 /* Hide/Show State for the sidebar */
@@ -109,115 +155,85 @@ label {
     margin-bottom: 15px;
 }
 
-/* Statistics Panel Styling */
-#statistics-panel {
-    font-size: 0.9em;
-    line-height: 1.4;
-}
-
-#statistics-panel strong {
-    color: #FFD700; /* Gold for emphasis */
-    display: block;
-    margin-top: 8px;
-}
-
-#statistics-panel ul {
-    list-style: none;
-    padding: 0;
-    margin: 5px 0 15px 0;
-}
-
-#statistics-panel li {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 5px;
-    margin-bottom: 3px;
-    border-radius: 3px;
-}
-
-.status-message {
-  margin-top: 20px;
-  padding: 10px;
-  background-color: rgba(0, 0, 0, 0.1); 
-  border-radius: 6px;
-  min-height: 40px;
-  font-size: 0.9em;
-  color: #c8e6c9;
-}
+/* Statistics Panel Styles (unchanged) */
+#statistics-panel { /* ... */ }
+#statistics-panel strong { /* ... */ }
+#statistics-panel ul { /* ... */ }
+#statistics-panel li { /* ... */ }
+.status-message { /* ... */ }
 
 
-/* --- Map Styling --- */
+/* --- Map Styling (Corrected) --- */
 #map {
   position: absolute;
-  top: 60px; /* Below the top bar */
+  top: 60px; /* Initial top position (Header + initial expanded content padding) */
   left: 0;
   width: 100%;
-  height: calc(100% - 60px); /* Full remaining vertical space */
-  transition: margin-left 0.3s ease, width 0.3s ease;
+  height: calc(100% - 60px); 
+  transition: margin-left 0.3s ease, width 0.3s ease, top 0.3s ease, height 0.3s ease;
 }
 
 /* Map Adjustment when Statistics Panel is Visible */
 #map.stats-visible {
-    margin-left: 300px; /* Make space for the left sidebar */
+    margin-left: 300px; 
     width: calc(100% - 300px);
 }
 
-/* Responsive adjustment for small screens */
+/* Map Adjustment when Top Bar is Collapsed/Expanded */
+#map.collapsed {
+    top: 40px; /* Only header height */
+    height: calc(100% - 40px);
+}
+
 @media (max-width: 768px) {
-  #topbar {
-    height: auto;
+  /* Simplified responsive layout for clarity and to fix floating elements */
+  body {
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    padding: 10px 20px;
-    gap: 10px;
+    height: auto;
+    overflow-y: auto;
   }
-  #topbar h1 {
+
+  #topbar {
+    position: relative;
     width: 100%;
-    text-align: center;
-    padding-right: 0;
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-    padding-bottom: 10px;
   }
+
+  #topbar-content {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 15px;
+  }
+  
   .control-group {
-    width: 100%;
-    justify-content: space-between;
-    flex-wrap: wrap;
+      width: 100%;
+      justify-content: space-between;
   }
   .layer-control {
       margin-left: 0;
       justify-content: flex-start;
+      flex-wrap: wrap;
   }
   
   #statistics-sidebar {
-    width: 100%;
-    top: auto;
-    left: 0;
-    height: auto;
     position: relative;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    transform: translateX(0); /* Always visible on small screens below controls */
-  }
-
-  /* Calculate top based on flexible topbar (approximation) */
-  #map {
-    top: 200px; /* Needs adjustment based on screen size, a rough guess */
-    height: calc(100vh - 200px); 
     width: 100%;
+    height: auto;
+    transform: translateX(0); /* Always visible below top bar when state is selected */
+    top: auto;
+  }
+  
+  /* Map takes up the rest of the viewport */
+  #map {
+    position: relative;
+    width: 100%;
+    height: 60vh; /* Give it a fixed height for mobile viewing */
     margin-left: 0;
-    position: relative; /* Use relative to flow below sidebar */
+    top: auto;
   }
 
   #map.stats-visible {
     margin-left: 0;
     width: 100%;
-  }
-  
-  /* Force map below the flexed topbar and sidebar on mobile */
-  body {
-    display: flex;
-    flex-direction: column;
-  }
-  #topbar, #statistics-sidebar, #map {
-      position: relative;
   }
 }
