@@ -9,14 +9,15 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="sidebar">
+
+  <div id="topbar">
     <h1>WebGIS Control Panel</h1>
-    
+
     <div class="control-group">
       <label for="state-dropdown">Select State:</label>
       <select id="state-dropdown" name="state">
         <option value="" disabled selected>-- Choose a State --</option>
-        </select>
+      </select>
     </div>
 
     <div class="control-group">
@@ -26,29 +27,30 @@
       </select>
     </div>
 
-    <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 20px 0;">
-    
-    <h2>Map Layers</h2>
     <div class="control-group layer-control">
-        <label>
-            <input type="radio" name="map-layer" value="fra-claims" id="fra-claims-radio">
-            Areas claimed under FRA
-        </label>
-        <div id="fra-date-control" class="date-control">
-            <label for="fra-date">Data Date (Ignored in current version):</label>
-            <input type="date" id="fra-date" value="2025-07-31">
-        </div>
+      <label>Map Layer:</label>
+      <label>
+        <input type="radio" name="map-layer" value="state-district" id="state-district-radio" checked>
+        Boundary
+      </label>
+      <label>
+        <input type="radio" name="map-layer" value="fra-claims" id="fra-claims-radio">
+        FRA Claims
+      </label>
+      <div id="fra-date-control" class="date-control">
+          <input type="date" id="fra-date" value="2025-07-31" title="Data Date (Ignored in current version)">
+      </div>
     </div>
-    <div id="status-message" class="status-message"></div>
   </div>
 
-  <div id="statistics-sidebar">
+  <div id="statistics-sidebar" class="hidden">
     <h2>Statistics (up to 31.7.2025)</h2>
     <div id="statistics-panel">
       <p>Select a state to view statistics.</p>
     </div>
+    <div id="status-message" class="status-message"></div>
   </div>
-  
+
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
