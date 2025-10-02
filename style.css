@@ -1,92 +1,51 @@
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', sans-serif;
-}
+/* ... Existing html, body, #sidebar, etc. ... */
 
-/* Base Sidebar Styling (Left) */
+/* Sidebar Styling - Forest Green */
 #sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 280px;
-  height: 100%;
-  background-color: #228b22; /* Forest Green */
-  color: #fff;
-  padding: 20px;
-  box-shadow: 2px 0 8px rgba(0,0,0,0.3);
+  /* ... existing styles ... */
   z-index: 1000;
   overflow-y: auto;
 }
 
-/* Right Sidebar Styling (Statistics) */
-#stats-sidebar {
+/* 👇 NEW Right Sidebar Styling 👇 */
+#statistics-sidebar {
     position: fixed;
     top: 0;
-    right: 0;
-    width: 300px; /* Slightly wider for stats */
+    right: 0; /* Positioned on the right */
+    width: 300px; /* Slightly wider than the left panel for stats */
     height: 100%;
-    background-color: #1e781e; /* Slightly darker green */
+    background-color: rgba(34, 139, 34, 0.95); /* Semi-transparent Forest Green */
     color: #fff;
     padding: 20px;
     box-shadow: -2px 0 8px rgba(0,0,0,0.3);
-    z-index: 1000;
+    z-index: 999;
     overflow-y: auto;
-    /* Added transition for smooth hide/show */
-    transition: transform 0.3s ease, width 0.3s ease;
+    transition: transform 0.3s ease;
+    transform: translateX(300px); /* Hidden by default */
 }
 
-/* New: Class to hide the stats sidebar by moving it off-screen */
-#stats-sidebar.hidden {
-    transform: translateX(300px); /* Move off-screen to the right */
-    width: 0; /* Collapse width */
-    padding: 0;
+#statistics-sidebar.visible {
+    transform: translateX(0); /* Visible state */
 }
 
-#stats-sidebar h2 {
+#statistics-sidebar h2 {
+    margin-top: 0;
+    font-size: 1.4rem;
     color: #fff;
     border-bottom: 2px solid rgba(255, 255, 255, 0.5);
     padding-bottom: 10px;
-    margin-top: 0;
+    margin-bottom: 15px;
+}
+/* 👆 NEW Right Sidebar Styling 👆 */
+
+#sidebar h1 {
+  /* ... existing styles ... */
 }
 
-/* Statistics Panel Styling */
-#statistics-panel {
-    font-size: 0.9em;
-    line-height: 1.4;
-}
+/* ... Existing h2, .control-group, label ... */
 
-#statistics-panel strong {
-    color: #FFD700; /* Gold for emphasis */
-    display: block;
-    margin-top: 8px;
-}
-
-#statistics-panel ul {
-    list-style: none;
-    padding: 0;
-    margin: 5px 0 15px 0;
-}
-
-#statistics-panel li {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 5px;
-    margin-bottom: 3px;
-    border-radius: 3px;
-    display: flex;
-    justify-content: space-between;
-}
-
-
-/* General Control Styling */
-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: bold;
-}
-
-#state-dropdown, #district-dropdown, #claim-date {
+/* Dropdown styling */
+#state-dropdown, #district-dropdown, #fra-date { /* Added #fra-date */
   width: 100%;
   padding: 10px;
   border-radius: 8px;
@@ -94,66 +53,108 @@ label {
   box-sizing: border-box;
   background-color: #f1f8f1;
   color: #333;
-}
-
-#district-dropdown:disabled, #claim-date:disabled {
-  background-color: #aaa;
-  color: #666;
-  cursor: not-allowed;
-}
-
-.status-message {
-  margin-top: 20px;
-  padding: 10px;
-  background-color: rgba(0, 0, 0, 0.1); 
-  border-radius: 6px;
-  min-height: 40px;
-  font-size: 0.9em;
-  color: #c8e6c9;
-}
-
-/* Map Styling - Uses dynamic calculation with CSS variables controlled by JS for map width */
-#map {
-  width: var(--map-width, 100%); /* Default to 100% until JS sets initial width */
-  height: 100vh;
-  margin-left: 0; /* Start at 0 */
   transition: all 0.3s ease;
 }
 
-/* Media Queries for initial layout and responsiveness */
+/* 👇 NEW Layer Control Styling 👇 */
+.layer-control {
+    padding: 10px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
 
-/* Desktop view: Map takes space between left panel and right panel/edge */
-@media (min-width: 1201px) {
+.layer-control label {
+    font-weight: normal;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+.layer-control input[type="radio"] {
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.date-control {
+    margin-top: 10px;
+    padding-left: 20px;
+}
+
+.date-control label {
+    font-weight: normal;
+    font-size: 0.9em;
+}
+/* 👆 NEW Layer Control Styling 👆 */
+
+
+/* Statistics Panel Styling (Moved from #sidebar h2/div to #statistics-panel content) */
+#statistics-panel {
+    font-size: 0.9em;
+    line-height: 1.4;
+    padding-right: 5px; /* prevent overflow */
+}
+
+/* ... Existing #statistics-panel styles ... */
+
+.status-message {
+  /* ... existing styles ... */
+}
+
+/* Map Styling - Adjusted for new right sidebar */
+#map {
+  width: calc(100% - 280px);
+  height: 100vh;
+  margin-left: 280px;
+  transition: margin-left 0.3s ease, width 0.3s ease; /* Added width transition */
+}
+
+/* 👇 NEW Map Adjustment when Statistics Panel is Visible 👇 */
+#map.stats-visible {
+    width: calc(100% - 280px - 300px); /* Full width - Left Sidebar - Right Sidebar */
+    margin-left: 280px;
+}
+/* 👆 NEW Map Adjustment when Statistics Panel is Visible 👆 */
+
+
+/* Responsive adjustment for small screens */
+@media (max-width: 1024px) { /* Adjust breakpoint for right panel */
+    #statistics-sidebar {
+        transform: translateX(300px); /* Keep hidden initially */
+        width: 250px;
+    }
+
     #map {
-        /* Initial state: Map covers 100% - 280px (left sidebar) */
         width: calc(100% - 280px);
-        margin-left: 280px;
+    }
+    
+    #map.stats-visible {
+        width: calc(100% - 280px - 250px);
     }
 }
-
-/* Smaller Desktop/Tablet view: Map next to only the left panel */
-@media (max-width: 1200px) {
-    #stats-sidebar {
-        /* Ensure it's off screen if map is not adjusted */
-        transform: translateX(300px); 
-    }
-    #map {
-        width: calc(100% - 280px); 
-        margin-left: 280px;
-    }
-}
-
 
 @media (max-width: 768px) {
   #sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    /* ... existing styles ... */
   }
+  
+  #statistics-sidebar {
+      position: relative;
+      width: 100%;
+      height: auto;
+      transform: translateX(0);
+      box-shadow: none;
+      background-color: #228b22; /* Remove transparency on small screen */
+      padding: 10px 20px;
+      /* The map will now be below both sidebars */
+  }
+
   #map {
     width: 100%;
     margin-left: 0;
-    height: calc(100vh - 300px);
+    height: calc(100vh - 400px); /* Increased reduction due to two panels */
+  }
+  
+  #map.stats-visible { /* No special class needed here, but keeping for consistency */
+      width: 100%;
+      margin-left: 0;
   }
 }
