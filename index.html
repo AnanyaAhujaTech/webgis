@@ -33,7 +33,7 @@
                 </select>
             </div>
 
-            <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 10px 0;">
+            <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 5px 0;">
 
             <div class="control-group radio-group">
                 <input type="radio" id="fra-claims-radio" name="layer-type" value="fra-claims" checked>
@@ -43,16 +43,16 @@
                     <input type="date" id="claim-date" name="claim-date" value="2025-07-31" style="width: auto;">
                 </div>
             </div>
+            
+            <div id="status-message" class="status-message"></div>
         </div>
-
-        <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 20px 0 0 0;">
-
+    </div>
+    
+    <div id="stats-sidebar" class="hidden">
         <h2>Statistics (up to 31.7.2025)</h2>
         <div id="statistics-panel">
             <p>Select a state to view statistics.</p>
         </div>
-
-        <div id="status-message" class="status-message"></div>
     </div>
 
     <div id="map"></div>
