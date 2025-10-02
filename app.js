@@ -8,69 +8,44 @@ document.addEventListener('DOMContentLoaded', () => {
     attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
   }).addTo(map);
 
-  let currentLayer = null; // To hold the currently displayed GeoJSON layer (state or district)
+  let currentLayer = null; // State or District GeoJSON layer
+  let landUseLayer = L.layerGroup().addTo(map); // Layer group for OSM data (Forest/Agri)
+  let currentBounds = null; // Stores the bounds of the current state/district selection
 
   // --- Configuration ---
-  // NOTE: The 'key' (e.g., 'madhya-pradesh') is used to construct filenames: key + '.geojson' and key + 'Dist.geojson'
   const stateData = {
     'madhya-pradesh': { 
-      name: 'Madhya Pradesh',
-      color: '#1f78b4', // Primary color
-      fillColor: '#a6cee3', // Fill color
-      districts: [
-        'Burhanpur', 'Seoni', 'Alirajpur', 'Chhindwara', 'Harda', 'Khargone', 'Khandwa', 
-        'Balaghat', 'Barwani', 'Betul', 'Morena', 'Bhind', 'Gwalior', 'Sheopur', 
-        'Shivpuri', 'Tikamgarh', 'Neemuch', 'Rewa', 'Satna', 'Guna', 'Ashoknagar', 
-        'Mandsaur', 'Singrauli', 'Sidhi', 'Sagar', 'Damoh', 'Shajapur', 'Vidisha', 
-        'Rajgarh', 'Shahdol', 'Katni', 'Umaria', 'Ratlam', 'Bhopal', 'Ujjain', 
-        'Raisen', 'Sehore', 'Jabalpur', 'Dewas', 'Anuppur', 'Jhabua', 'Dindori', 
-        'Narsinghpur', 'Dhar', 'Indore', 'Mandla', 'Hoshangabad', 'Agar Malwa', 
-        'Datia', 'Chhatarpur', 'Panna', 'Niwari'
-      ]
+      name: 'Madhya Pradesh', color: '#1f78b4', fillColor: '#a6cee3', 
+      districts: ['Burhanpur', 'Seoni', 'Alirajpur', 'Chhindwara', 'Harda', 'Khargone', 'Khandwa', 'Balaghat', 'Barwani', 'Betul', 'Morena', 'Bhind', 'Gwalior', 'Sheopur', 'Shivpuri', 'Tikamgarh', 'Neemuch', 'Rewa', 'Satna', 'Guna', 'Ashoknagar', 'Mandsaur', 'Singrauli', 'Sidhi', 'Sagar', 'Damoh', 'Shajapur', 'Vidisha', 'Rajgarh', 'Shahdol', 'Katni', 'Umaria', 'Ratlam', 'Bhopal', 'Ujjain', 'Raisen', 'Sehore', 'Jabalpur', 'Dewas', 'Anuppur', 'Jhabua', 'Dindori', 'Narsinghpur', 'Dhar', 'Indore', 'Mandla', 'Hoshangabad', 'Agar Malwa', 'Datia', 'Chhatarpur', 'Panna', 'Niwari']
     },
     'telangana': { 
-      name: 'Telangana',
-      color: '#33a02c', 
-      fillColor: '#b2df8a',
-      districts: [
-        'Adilabad', 'Hyderabad', 'Jagtial', 'Jangaon', 'Mulugu', 'Jogulamba Gadwal', 
-        'Kamareddy', 'Karimnagar', 'Khammam', 'Komaram Bheem', 'Mahabubabad', 
-        'Mahabubnagar', 'Mancherial', 'Medak', 'Medchal Malkajgiri', 'Nagarkurnool', 
-        'Nalgonda', 'Nirmal', 'Nizamabad', 'Peddapalli', 'Rajanna Sircilla', 
-        'Ranga Reddy', 'Sangareddy', 'Siddipet', 'Suryapet', 'Vikarabad', 
-        'Wanaparthy', 'Warangal Rural', 'Warangal Urban', 'Yadadri Bhuvanagiri',
-        'Bhadradri Kothagudem', 'Jayashankar Bhupalapally', 'Narayanpet'
-      ]
+      name: 'Telangana', color: '#33a02c', fillColor: '#b2df8a', 
+      districts: ['Adilabad', 'Hyderabad', 'Jagtial', 'Jangaon', 'Mulugu', 'Jogulamba Gadwal', 'Kamareddy', 'Karimnagar', 'Khammam', 'Komaram Bheem', 'Mahabubabad', 'Mahabubnagar', 'Mancherial', 'Medak', 'Medchal Malkajgiri', 'Nagarkurnool', 'Nalgonda', 'Nirmal', 'Nizamabad', 'Peddapalli', 'Rajanna Sircilla', 'Ranga Reddy', 'Sangareddy', 'Siddipet', 'Suryapet', 'Vikarabad', 'Wanaparthy', 'Warangal Rural', 'Warangal Urban', 'Yadadri Bhuvanagiri', 'Bhadradri Kothagudem', 'Jayashankar Bhupalapally', 'Narayanpet']
     },
     'tripura': { 
-      name: 'Tripura',
-      color: '#e31a1c', 
-      fillColor: '#fb9a99',
-      districts: [
-        'North Tripura', 'Dhalai', 'Sipahijala', 'Gomati', 'Khowai', 
-        'West Tripura', 'South Tripura', 'Unokoti'
-      ]
+      name: 'Tripura', color: '#e31a1c', fillColor: '#fb9a99', 
+      districts: ['North Tripura', 'Dhalai', 'Sipahijala', 'Gomati', 'Khowai', 'West Tripura', 'South Tripura', 'Unokoti']
     },
     'odisha': { 
-      name: 'Odisha',
-      color: '#ff7f00', 
-      fillColor: '#fdbf6f',
-      districts: [
-        'Bhadrak', 'Dhenkanal', 'Jajpur', 'Subarnapur', 'Nuapada', 'Balangir', 
-        'Boudh', 'Cuttack', 'Kandhamal', 'Nayagarh', 'Khordha', 'Kalahandi', 
-        'Jagatsinghpur', 'Puri', 'Nabarangapur', 'Rayagada', 'Koraput', 
-        'Malkangiri', 'Angul', 'Kendrapara', 'Ganjam', 'Gajapati', 'Mayurbhanj', 
-        'Sundargarh', 'Kendujhar', 'Balasore', 'Jharsuguda', 'Bargarh', 
-        'Deogarh', 'Sambalpur'
-      ]
+      name: 'Odisha', color: '#ff7f00', fillColor: '#fdbf6f', 
+      districts: ['Bhadrak', 'Dhenkanal', 'Jajpur', 'Subarnapur', 'Nuapada', 'Balangir', 'Boudh', 'Cuttack', 'Kandhamal', 'Nayagarh', 'Khordha', 'Kalahandi', 'Jagatsinghpur', 'Puri', 'Nabarangapur', 'Rayagada', 'Koraput', 'Malkangiri', 'Angul', 'Kendrapara', 'Ganjam', 'Gajapati', 'Mayurbhanj', 'Sundargarh', 'Kendujhar', 'Balasore', 'Jharsuguda', 'Bargarh', 'Deogarh', 'Sambalpur']
     }
   };
+  
+  const landUseStyles = {
+    'forest': { color: '#006400', fillColor: '#388E3C', fillOpacity: 0.7, weight: 1, tags: 'leisure=forest or landuse=forest' },
+    'agriculture': { color: '#D4AC0D', fillColor: '#F4D03F', fillOpacity: 0.7, weight: 1, tags: 'landuse=farmland or landuse=farmyard or landuse=allotments' }
+  };
+
 
   // --- DOM Elements ---
 
   const stateDropdown = document.getElementById('state-dropdown');
   const districtDropdown = document.getElementById('district-dropdown');
   const statusMessageDiv = document.getElementById('status-message');
+  const forestRadio = document.getElementById('forest-radio');
+  const agriRadio = document.getElementById('agri-radio');
+  const landuseForm = document.getElementById('landuse-form');
 
   // --- Initialization: Populate State Dropdown ---
 
@@ -87,19 +62,72 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentLayer) {
       map.removeLayer(currentLayer);
       currentLayer = null;
+      currentBounds = null; // Clear bounds as well
     }
+    landUseLayer.clearLayers();
+    // Reset land use radio buttons
+    landuseForm.querySelector('input[value="none"]').checked = true;
+    forestRadio.disabled = true;
+    agriRadio.disabled = true;
   }
 
   function updateStatus(message, isError = false) {
+    // Removed success message logic, keeping only alerts/info
     statusMessageDiv.innerHTML = message;
     statusMessageDiv.style.color = isError ? '#ffdddd' : '#c8e6c9';
     statusMessageDiv.style.backgroundColor = isError ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)';
   }
 
+  // --- Overpass Query Functions ---
+
+  function queryOverpass(layerType) {
+    if (!currentBounds) {
+        updateStatus('Select a State or District first to query land use data.', true);
+        return;
+    }
+    
+    landUseLayer.clearLayers();
+    const style = landUseStyles[layerType];
+    const bounds = currentBounds.toBBoxString().split(',').reverse().join(','); // Format: lat_min, lon_min, lat_max, lon_max
+    
+    updateStatus(`Querying OpenStreetMap for ${layerType}...`);
+
+    // Overpass Query Language (QL) to find areas within the bounds
+    const overpassQL = `
+        [out:json][timeout:60];
+        (
+          node[${style.tags}](${bounds});
+          way[${style.tags}](${bounds});
+          relation[${style.tags}](${bounds});
+        );
+        out geom;
+    `;
+    
+    const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQL)}`;
+
+    // Use leaflet-omnivore to handle the OSM XML/JSON response and convert to GeoJSON layers
+    const omnivoreLayer = omnivore.overpass(overpassUrl, {
+        onEachFeature: function(feature, layer) {
+             // Optional: Bind popup with feature tags
+             // layer.bindPopup(Object.entries(feature.properties).map(([k,v]) => `<b>${k}:</b> ${v}`).join('<br>'));
+        }
+    }, L.geoJSON(null, {
+        style: style // Apply the layer's dedicated style
+    }));
+
+    omnivoreLayer
+        .on('ready', function() {
+            landUseLayer.addLayer(this);
+            updateStatus(`${layerType} layer loaded from OpenStreetMap.`);
+        })
+        .on('error', function() {
+             updateStatus(`Error querying Overpass API for ${layerType}. The area might be too large or the server is busy.`, true);
+        });
+  }
+
   function handleStateSelection(stateKey) {
     clearLayer();
     
-    // Reset district dropdown
     districtDropdown.innerHTML = '<option value="" disabled selected>-- Select a District --</option>';
     districtDropdown.disabled = true;
     
@@ -111,7 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const config = stateData[stateKey];
     updateStatus(`State selected: ${config.name}. Loading state boundary...`);
     
-    // Populate District Dropdown
     config.districts.forEach(distName => {
       const option = document.createElement('option');
       option.value = distName;
@@ -120,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     districtDropdown.disabled = false;
     
-    // Load the State GeoJSON layer
     const stateFile = `${stateKey}.geojson`;
     
     fetch(stateFile)
@@ -138,8 +164,12 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }).addTo(map);
 
-        map.fitBounds(currentLayer.getBounds());
-        updateStatus(`State layer for ${config.name} loaded successfully. Now select a district.`);
+        currentBounds = currentLayer.getBounds();
+        map.fitBounds(currentBounds);
+        
+        forestRadio.disabled = false;
+        agriRadio.disabled = false;
+        updateStatus(`State layer for ${config.name} loaded. Select a district or land use layer.`);
       })
       .catch(err => {
         console.error(`Error loading state file ${stateFile}:`, err);
@@ -148,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function handleDistrictSelection(stateKey, districtName) {
-    clearLayer(); // Remove the state layer
+    clearLayer(); 
     
     if (!districtName) return;
 
@@ -162,17 +192,22 @@ document.addEventListener('DOMContentLoaded', () => {
         return r.json();
       })
       .then(data => {
+        let selectedFeatureBounds = null;
         
-        // Define the style function to highlight the selected district
         const styleFeature = (feature) => {
-          // *** FIX APPLIED: Using 'district' property ***
+          // *** FINAL FIX: Using 'district' property ***
           const isSelected = feature.properties && feature.properties.district === districtName;
 
           if (isSelected) {
+            // Save the bounds of the selected feature for OSM query and map zoom
+            if (!selectedFeatureBounds) {
+                const tempLayer = L.geoJSON(feature);
+                selectedFeatureBounds = tempLayer.getBounds();
+            }
             return {
-              color: config.color, // State primary color
-              fillColor: config.fillColor, // State fill color
-              fillOpacity: 0.8, // High fill opacity for highlighting
+              color: config.color, 
+              fillColor: config.fillColor, 
+              fillOpacity: 0.6, // Increased transparency
               weight: 3
             };
           }
@@ -185,24 +220,21 @@ document.addEventListener('DOMContentLoaded', () => {
           };
         };
 
-        // Load the GeoJSON with conditional styling
-        currentLayer = L.geoJSON(data, {
-          style: styleFeature
-        }).addTo(map);
-
-        // Find the boundary of the selected district to zoom in
-        // *** FIX APPLIED: Using 'district' property ***
-        const selectedFeature = data.features.find(f => f.properties.district === districtName);
-        if (selectedFeature) {
-          // Temporarily create a layer for the single feature to get its bounds
-          const tempLayer = L.geoJSON(selectedFeature);
-          map.fitBounds(tempLayer.getBounds());
-          updateStatus(`Successfully loaded and highlighted ${districtName}.`);
+        currentLayer = L.geoJSON(data, { style: styleFeature }).addTo(map);
+        
+        // Use the calculated bounds to set global bounds and zoom
+        if (selectedFeatureBounds) {
+            currentBounds = selectedFeatureBounds;
+            map.fitBounds(currentBounds);
         } else {
-          // Fallback zoom to the whole district file bounds
-          map.fitBounds(currentLayer.getBounds());
-          updateStatus(`Successfully loaded district layer for ${config.name}, but could not find specific bounds for ${districtName}. Check GeoJSON 'district' property.`, true);
+             // Fallback: zoom to the whole district file bounds (this shouldn't happen)
+            currentBounds = currentLayer.getBounds();
+            map.fitBounds(currentBounds);
         }
+
+        forestRadio.disabled = false;
+        agriRadio.disabled = false;
+        updateStatus(`District layer for ${districtName} loaded. Select a land use layer.`);
       })
       .catch(err => {
         console.error(`Error loading district file ${distFile}:`, err);
@@ -215,7 +247,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // State Dropdown Change
   stateDropdown.addEventListener('change', (event) => {
     const stateKey = event.target.value;
-    // Ensure the district dropdown is reset when the state changes
     districtDropdown.value = ""; 
     handleStateSelection(stateKey);
   });
@@ -223,12 +254,31 @@ document.addEventListener('DOMContentLoaded', () => {
   // District Dropdown Change
   districtDropdown.addEventListener('change', (event) => {
     const districtName = event.target.value;
-    const stateKey = stateDropdown.value; // Get the currently selected state
+    const stateKey = stateDropdown.value; 
     
+    // Only proceed if a state is selected and a district is chosen
     if (stateKey && districtName) {
       handleDistrictSelection(stateKey, districtName);
+    } else {
+        // If they select '-- Select a District --' after a State, revert to State view
+        handleStateSelection(stateKey);
     }
   });
+
+  // Land Use Radio Buttons Change
+  landuseForm.addEventListener('change', (event) => {
+      landUseLayer.clearLayers();
+      const selectedValue = event.target.value;
+
+      if (selectedValue === 'forest') {
+          queryOverpass('forest');
+      } else if (selectedValue === 'agriculture') {
+          queryOverpass('agriculture');
+      } else if (selectedValue === 'none') {
+          updateStatus('Land use layer removed.');
+      }
+  });
+
 
   // Initial message
   updateStatus('Welcome to the WebGIS system. Select a state to begin.');
