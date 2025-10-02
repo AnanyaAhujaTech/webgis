@@ -1,65 +1,63 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WebGIS — State and District Selector</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WebGIS — State and District Selector</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-  <div id="topbar">
-    <div id="topbar-header">
-      <h1>WebGIS Control Panel</h1>
-      <button id="collapse-toggle" aria-expanded="true" title="Collapse Controls">
-        &#9650; </button>
-    </div>
-
-    <div id="topbar-content" class="expanded">
-      <div class="control-group">
-        <label for="state-dropdown">Select State:</label>
-        <select id="state-dropdown" name="state">
-          <option value="" disabled selected>-- Choose a State --</option>
-        </select>
-      </div>
-
-      <div class="control-group">
-        <label for="district-dropdown">Select District:</label>
-        <select id="district-dropdown" name="district" disabled>
-          <option value="" disabled selected>-- Select a State First --</option>
-        </select>
-      </div>
-
-      <div class="control-group layer-control">
-        <label>Map Layer:</label>
-        <label>
-          <input type="radio" name="map-layer" value="state-district" id="state-district-radio" checked>
-          Boundary
-        </label>
-        <label>
-          <input type="radio" name="map-layer" value="fra-claims" id="fra-claims-radio">
-          FRA Claims
-        </label>
-        <div id="fra-date-control" class="date-control">
-            <input type="date" id="fra-date" value="2025-07-31" title="Data Date (Ignored in current version)">
+    <div id="top-bar" class="collapsed">
+        <div id="top-bar-header">
+            <h1>WebGIS Control Panel</h1>
+            <button id="collapse-button" aria-expanded="false" aria-controls="control-content">
+                <i class="fas fa-chevron-up"></i>
+            </button>
         </div>
-      </div>
+
+        <div id="control-content">
+            <div class="control-group">
+                <label for="state-dropdown">Select State:</label>
+                <select id="state-dropdown" name="state">
+                    <option value="" disabled selected>-- Choose a State --</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="district-dropdown">Select District:</label>
+                <select id="district-dropdown" name="district" disabled>
+                    <option value="" disabled selected>-- Select a State First --</option>
+                </select>
+            </div>
+
+            <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 10px 0;">
+
+            <div class="control-group radio-group">
+                <input type="radio" id="fra-claims-radio" name="layer-type" value="fra-claims" checked>
+                <label for="fra-claims-radio" style="display: inline;">Areas claimed under FRA</label>
+                <div id="date-selector-group">
+                    <label for="claim-date">Data Date:</label>
+                    <input type="date" id="claim-date" name="claim-date" value="2025-07-31" style="width: auto;">
+                </div>
+            </div>
+        </div>
+
+        <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 20px 0 0 0;">
+
+        <h2>Statistics (up to 31.7.2025)</h2>
+        <div id="statistics-panel">
+            <p>Select a state to view statistics.</p>
+        </div>
+
+        <div id="status-message" class="status-message"></div>
     </div>
-  </div>
 
-  <div id="statistics-sidebar" class="hidden">
-    <h2>Statistics (up to 31.7.2025)</h2>
-    <div id="statistics-panel">
-      <p>Select a state to view statistics.</p>
-    </div>
-    <div id="status-message" class="status-message"></div>
-  </div>
+    <div id="map"></div>
 
-  <div id="map"></div>
-
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="app.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
