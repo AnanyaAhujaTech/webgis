@@ -1,239 +1,179 @@
 html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', sans-serif;
-  background-color: #f0f0f0;
-  overflow: hidden; 
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
 }
 
-/* --- Top Bar Styling (Collapsible) --- */
-#topbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background-color: #228b22; 
-  color: #fff;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-  z-index: 1000;
-  transition: height 0.3s ease; /* Transition height for collapse effect */
+/* Top Bar Styling - Forest Green */
+#top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #228b22; /* Forest Green */
+    color: #fff;
+    padding: 10px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    z-index: 1000;
+    overflow-y: auto;
+    transition: height 0.3s ease, padding 0.3s ease;
+    box-sizing: border-box;
 }
 
-#topbar-header {
+#top-bar.collapsed {
+    height: 55px; /* Height for the title bar */
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+#top-bar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
-    height: 40px; /* Fixed height for the header */
 }
 
-#topbar h1 {
-  font-size: 1.4rem;
-  margin: 0;
-}
-
-#collapse-toggle {
-    background: none;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+#top-bar h1 {
+    margin: 0;
     color: #fff;
+    font-size: 1.5rem;
+}
+
+#collapse-button {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
     cursor: pointer;
-    font-size: 1.2rem;
-    line-height: 1;
-    padding: 5px 10px;
-    border-radius: 4px;
     transition: transform 0.3s ease;
 }
 
-/* Rotate the arrow when content is collapsed */
-#collapse-toggle.collapsed {
+#top-bar.collapsed #collapse-button i {
     transform: rotate(180deg);
 }
 
-#topbar-content {
-    /* Flex content setup */
-    display: flex;
-    align-items: center;
-    padding: 0 20px 10px 20px;
-    gap: 25px;
-    
-    /* Collapse styling */
-    max-height: 100px; /* A height larger than content */
+#control-content, #statistics-panel, .status-message, #top-bar h2 {
+    max-height: 0;
+    opacity: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease, padding-top 0.3s ease, padding-bottom 0.3s ease;
+    transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
 }
 
-#topbar-content.collapsed {
-    max-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
+#top-bar:not(.collapsed) #control-content,
+#top-bar:not(.collapsed) #statistics-panel,
+#top-bar:not(.collapsed) .status-message,
+#top-bar:not(.collapsed) #top-bar h2 {
+    max-height: 500px; /* Sufficient height to show content */
+    opacity: 1;
+    margin-top: 10px;
+}
+
+#top-bar h2 {
+    font-size: 1.2rem;
+    color: #fff;
+    margin-bottom: 5px;
 }
 
 .control-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+    margin-bottom: 10px;
+}
+
+.radio-group {
+    display: flex;
+    align-items: center;
+}
+
+.radio-group input[type="radio"] {
+    margin-right: 5px;
+}
+
+#date-selector-group {
+    margin-left: 20px;
+    display: flex;
+    align-items: center;
+}
+
+#date-selector-group label {
+    margin-right: 5px;
+    margin-bottom: 0;
+    font-weight: normal;
 }
 
 label {
-  font-weight: bold;
-  margin: 0;
-  white-space: nowrap;
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
 }
 
-#state-dropdown, #district-dropdown {
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: none;
-  background-color: #f1f8f1;
-  color: #333;
-  min-width: 150px;
+/* Dropdown and Date input styling */
+#state-dropdown, #district-dropdown, #claim-date {
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #c8e6c9;
+    box-sizing: border-box;
+    background-color: #f1f8f1;
+    color: #333;
+    transition: all 0.3s ease;
+    font-size: 0.9em;
 }
 
 #district-dropdown:disabled {
-  background-color: #aaa;
-  color: #666;
-  cursor: not-allowed;
+    background-color: #aaa;
+    color: #666;
+    cursor: not-allowed;
 }
 
-/* Layer Control Styling */
-.layer-control {
-    gap: 15px;
-    margin-left: 20px;
-}
-.layer-control label {
-    font-weight: normal;
-}
-.layer-control input[type="radio"] {
-    margin-right: 5px;
-}
-.date-control input {
-    padding: 6px;
-    border-radius: 4px;
-    border: none;
+/* Statistics Panel Styling */
+#statistics-panel {
+    font-size: 0.9em;
+    line-height: 1.4;
+    padding-bottom: 5px;
 }
 
-
-/* --- Statistics Sidebar (LEFT) Styling --- */
-#statistics-sidebar {
-  position: fixed;
-  top: 60px; /* Below the header part of the top bar (initial guess) */
-  left: 0;
-  width: 300px;
-  height: calc(100% - 60px); 
-  background-color: #228b22; 
-  color: #fff;
-  padding: 20px;
-  box-shadow: 2px 0 8px rgba(0,0,0,0.3);
-  z-index: 900;
-  overflow-y: auto;
-  transition: transform 0.3s ease;
+#statistics-panel strong {
+    color: #FFD700; /* Gold for emphasis */
+    display: block;
+    margin-top: 8px;
 }
 
-/* Class to dynamically adjust sidebar position when topbar is collapsed/expanded */
-#statistics-sidebar.below-expanded {
-    top: 60px; /* Header (40px) + content padding (20px approx) */
-    height: calc(100% - 60px);
+#statistics-panel ul {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 10px 0;
 }
 
-#statistics-sidebar.below-collapsed {
-    top: 40px; /* Only header height */
-    height: calc(100% - 40px);
+#statistics-panel li {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 3px 5px;
+    margin-bottom: 3px;
+    border-radius: 3px;
 }
 
-/* Hide/Show State for the sidebar */
-#statistics-sidebar.hidden {
-  transform: translateX(-340px);
+.status-message {
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    min-height: 40px;
+    font-size: 0.9em;
+    color: #c8e6c9;
 }
 
-#statistics-sidebar h2 {
-    font-size: 1.4rem;
-    color: #fff;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.5);
-    padding-bottom: 10px;
-    margin-top: 0;
-    margin-bottom: 15px;
-}
-
-/* Statistics Panel Styles (unchanged) */
-#statistics-panel { /* ... */ }
-#statistics-panel strong { /* ... */ }
-#statistics-panel ul { /* ... */ }
-#statistics-panel li { /* ... */ }
-.status-message { /* ... */ }
-
-
-/* --- Map Styling (Corrected) --- */
+/* Map Styling */
 #map {
-  position: absolute;
-  top: 60px; /* Initial top position (Header + initial expanded content padding) */
-  left: 0;
-  width: 100%;
-  height: calc(100% - 60px); 
-  transition: margin-left 0.3s ease, width 0.3s ease, top 0.3s ease, height 0.3s ease;
+    width: 100%;
+    height: 100vh;
+    padding-top: 55px; /* Default height of collapsed top-bar */
+    box-sizing: border-box;
+    transition: padding-top 0.3s ease;
 }
 
-/* Map Adjustment when Statistics Panel is Visible */
-#map.stats-visible {
-    margin-left: 300px; 
-    width: calc(100% - 300px);
+#top-bar:not(.collapsed) + #map {
+    padding-top: 300px; /* Adjust based on expanded content height */
 }
 
-/* Map Adjustment when Top Bar is Collapsed/Expanded */
-#map.collapsed {
-    top: 40px; /* Only header height */
-    height: calc(100% - 40px);
-}
-
+/* Responsive adjustment for small screens */
 @media (max-width: 768px) {
-  /* Simplified responsive layout for clarity and to fix floating elements */
-  body {
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    overflow-y: auto;
-  }
-
-  #topbar {
-    position: relative;
-    width: 100%;
-  }
-
-  #topbar-content {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 15px;
-  }
-  
-  .control-group {
-      width: 100%;
-      justify-content: space-between;
-  }
-  .layer-control {
-      margin-left: 0;
-      justify-content: flex-start;
-      flex-wrap: wrap;
-  }
-  
-  #statistics-sidebar {
-    position: relative;
-    width: 100%;
-    height: auto;
-    transform: translateX(0); /* Always visible below top bar when state is selected */
-    top: auto;
-  }
-  
-  /* Map takes up the rest of the viewport */
-  #map {
-    position: relative;
-    width: 100%;
-    height: 60vh; /* Give it a fixed height for mobile viewing */
-    margin-left: 0;
-    top: auto;
-  }
-
-  #map.stats-visible {
-    margin-left: 0;
-    width: 100%;
-  }
+    #top-bar:not(.collapsed) + #map {
+        padding-top: 450px; /* Adjust for smaller screens where content stacks */
+    }
 }
