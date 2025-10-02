@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // GeoJSON for the dummy claims
+    // GeoJSON for the dummy claims (Unchanged)
     const fraClaimsGeoJSON = {
         "type": "FeatureCollection",
         "features": [
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
 
-    // Function to create a small polygon feature for demonstration
+    // Function to create a small polygon feature for demonstration (Unchanged)
     function createDummyPolygon(lat, lon, state, district, id) {
         const size = 0.005; // Size in degrees
         return {
@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusMessageDiv = document.getElementById('status-message');
     const statisticsPanel = document.getElementById('statistics-panel');
     const fraClaimsRadio = document.getElementById('fra-claims-radio');
+    const statsSidebar = document.getElementById('stats-sidebar');
 
     // --- Core Functions ---
 
@@ -162,13 +163,22 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessageDiv.style.color = isError ? '#ffdddd' : '#c8e6c9';
         statusMessageDiv.style.backgroundColor = isError ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)';
     }
+    
+    // Function to show/hide the statistics sidebar
+    function toggleStatsSidebar(show) {
+        document.body.classList.toggle('stats-open', show);
+        statsSidebar.classList.toggle('hidden', !show);
+        // Important: Invalidate map size after showing/hiding the sidebar
+        setTimeout(() => map.invalidateSize(), 300);
+    }
 
     function renderStatistics(stateKey) {
         if (!stateKey) {
             statisticsPanel.innerHTML = '<p>Select a state to view statistics.</p>';
+            toggleStatsSidebar(false);
             return;
         }
-
+        
         const stats = stateData[stateKey].stats;
 
         // Function to format the three-part stats (Individual, Community, Total)
@@ -182,22 +192,27 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         statisticsPanel.innerHTML = `
-            ${formatThreePartStat('No. of claims received upto 31.7.2025', stats.claims_received)}
-            ${formatThreePartStat('No. of titles distributed upto 31.7.2025', stats.titles_distributed)}
-            ${formatThreePartStat('Extent of forest land for which titles distributed', stats.land_distributed, 'acres')}
+            ${formatThreePartStat('Claims received', stats.claims_received)}
+            ${formatThreePartStat('Titles distributed', stats.titles_distributed)}
+            ${formatThreePartStat('Land distributed', stats.land_distributed, 'acres')}
 
-            <strong>No. of claims rejected:</strong> ${stats.claims_rejected}<br>
-            <strong>Total No. of Claims Disposed off:</strong> ${stats.claims_disposed}<br>
+            <strong>Claims rejected:</strong> ${stats.claims_rejected}<br>
+            <strong>Claims Disposed off:</strong> ${stats.claims_disposed}<br>
 
-            <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 10px 0;">
+            <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 8px 0;">
 
-            <strong>% of Claims disposed off w.r.t. claims received:</strong> ${stats.percent_disposed}<br>
-            <strong>% of Titles distributed over number of claims received:</strong> ${stats.percent_titles}
+            <strong>% Claims disposed:</strong> ${stats.percent_disposed}<br>
+            <strong>% Titles distributed:</strong> ${stats.percent_titles}
         `;
+        
+        // Show the sidebar when stats are rendered
+        toggleStatsSidebar(true);
     }
 
     function renderFraClaims(stateKey, districtName) {
         clearLayer('fra-claims'); // Clear previous claims layer
+        
+        if (!stateKey) return;
 
         const stateName = stateData[stateKey].name;
 
@@ -247,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStatus(`Displaying ${filteredClaims.length} FRA claim polygons for ${districtName || stateName}.`, false);
     }
 
-    // --- State and District Logic (Modified to handle Claims Layer) ---
+    // --- State and District Logic ---
 
     function handleStateSelection(stateKey) {
         clearLayer();
@@ -262,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const config = stateData[stateKey];
-        renderStatistics(stateKey);
+        renderStatistics(stateKey); // Show statistics in the new sidebar
         updateStatus(`State selected: ${config.name}. Loading state boundary...`);
 
         config.districts.forEach(distName => {
@@ -285,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     style: {
                         color: config.color,
                         fillColor: config.fillColor,
-                        fillOpacity: 0.3, // Slightly reduced fill opacity
+                        fillOpacity: 0.3,
                         weight: 2
                     }
                 }).addTo(map);
@@ -306,11 +321,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleDistrictSelection(stateKey, districtName) {
-        // Keep the state statistics
-        renderStatistics(stateKey);
+        renderStatistics(stateKey); // Re-render stats (keeps them visible)
 
         if (!districtName) {
-            // If they unselect the district, reload the full state
             handleStateSelection(stateKey);
             return;
         }
@@ -419,10 +432,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const districtName = districtDropdown.value;
 
         if (fraClaimsRadio.checked && stateKey) {
-            // Display claims, filtered by district if one is selected
             renderFraClaims(stateKey, districtName || null);
         } else {
-            // Hide claims if layer is unchecked (though only one radio is present, good practice)
             clearLayer('fra-claims');
         }
     });
