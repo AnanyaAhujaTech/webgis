@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "type": "FeatureCollection",
         "features": [
             // Madhya Pradesh - Burhanpur (3 Polygons) - Coordinates adjusted for spacing
-            createDummyPolygon(21.28, 76.20, 'Madhya Pradesh', 'Burhanpur', 19729),
+            createDummyPolygon(21.28, 76.30, 'Madhya Pradesh', 'Burhanpur', 19729),
             createDummyPolygon(21.35, 76.30, 'Madhya Pradesh', 'Burhanpur', 22493),
             createDummyPolygon(21.15, 76.45, 'Madhya Pradesh', 'Burhanpur', 32083),
 
