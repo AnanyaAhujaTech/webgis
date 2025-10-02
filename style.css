@@ -10,7 +10,7 @@ html, body {
 #top-bar {
     position: fixed;
     top: 0;
-    left: 0;
+    left: 30;
     width: 100%;
     background-color: #228b22; /* Forest Green */
     color: #fff;
