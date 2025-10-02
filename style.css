@@ -5,12 +5,12 @@ html, body {
   font-family: 'Inter', sans-serif;
 }
 
-/* Sidebar Styling - Now Forest Green */
+/* Sidebar Styling - Forest Green */
 #sidebar {
   position: fixed;
   top: 0;
   left: 0;
-  width: 280px; /* Slightly wider for better control display */
+  width: 280px; 
   height: 100%;
   background-color: #228b22; /* Forest Green */
   color: #fff;
@@ -26,6 +26,12 @@ html, body {
   border-bottom: 2px solid rgba(255, 255, 255, 0.5);
   padding-bottom: 10px;
   font-size: 1.5rem;
+}
+
+#sidebar h2 {
+    font-size: 1.2rem;
+    color: #fff;
+    margin-bottom: 15px;
 }
 
 .control-group {
@@ -56,24 +62,38 @@ label {
   cursor: not-allowed;
 }
 
+.landuse-control label {
+    font-weight: normal;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.landuse-control input[type="radio"] {
+    margin-right: 8px;
+}
+
+
 .status-message {
   margin-top: 20px;
   padding: 10px;
-  background-color: rgba(255, 255, 255, 0.2);
+  /* Removed success styling, focusing on current state */
+  background-color: rgba(0, 0, 0, 0.1); 
   border-radius: 6px;
   min-height: 40px;
   font-size: 0.9em;
+  color: #c8e6c9; /* Light green text */
 }
 
 /* Map Styling */
 #map {
-  width: calc(100% - 280px); /* Map takes the remaining width */
+  width: calc(100% - 280px);
   height: 100vh;
-  margin-left: 280px; /* Offset the map to start after the sidebar */
-  transition: margin-left 0.3s ease; /* For smooth transitions if width changed */
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
 }
 
-/* Responsive adjustment for small screens */
+/* Responsive adjustment for small screens (same as before) */
 @media (max-width: 768px) {
   #sidebar {
     width: 100%;
@@ -84,6 +104,6 @@ label {
   #map {
     width: 100%;
     margin-left: 0;
-    height: calc(100vh - 300px); /* Adjust height for the visible sidebar */
+    height: calc(100vh - 300px);
   }
 }
