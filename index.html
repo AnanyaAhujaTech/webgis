@@ -3,24 +3,39 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WebGIS — State Selector</title>
+  <title>WebGIS — State and District Selector</title>
 
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Sidebar Panel for Controls -->
   <div id="sidebar">
-    <h2>State Selector</h2>
+    <h1>WebGIS Control Panel</h1>
+    
+    <!-- State Dropdown -->
     <div class="control-group">
-      <label for="state-dropdown">Select a State:</label>
+      <label for="state-dropdown">Select State:</label>
       <select id="state-dropdown" name="state">
         <option value="" disabled selected>-- Choose a State --</option>
-        </select>
+        <!-- Options populated by app.js -->
+      </select>
     </div>
-    <div id="layer-info" style="margin-top: 15px; font-size: 0.9em;">
-      </div>
+
+    <!-- District Dropdown (Initially disabled) -->
+    <div class="control-group">
+      <label for="district-dropdown">Select District:</label>
+      <select id="district-dropdown" name="district" disabled>
+        <option value="" disabled selected>-- Select a State First --</option>
+      </select>
+    </div>
+
+    <!-- Feedback Message Area -->
+    <div id="status-message" class="status-message"></div>
   </div>
 
+  <!-- Map Container -->
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
