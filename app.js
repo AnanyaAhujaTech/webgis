@@ -9,14 +9,50 @@ document.addEventListener('DOMContentLoaded', () => {
   }).addTo(map);
 
   let currentLayer = null; // State or District GeoJSON layer
-  let claimsLayer = L.layerGroup().addTo(map); // Layer group for claims visualization
+  let fraClaimsLayer = null; // New layer for FRA claims
   
-  // --- Configuration & Data ---
-  
-  // Statistical Data Structure
+  // Define FRA Polygons (The 3, 5, 4, 6, 7 polygons as required)
+  const fraClaimsGeoJSON = {
+    type: "FeatureCollection",
+    features: [
+      // Madhya Pradesh: Burhanpur (3) - Use simple mock coordinates
+      { type: "Feature", properties: { district: "Burhanpur", state: "Madhya Pradesh", count: 1 }, geometry: { type: "Polygon", coordinates: [[[76.22, 21.32], [76.24, 21.32], [76.24, 21.30], [76.22, 21.30], [76.22, 21.32]]] }},
+      { type: "Feature", properties: { district: "Burhanpur", state: "Madhya Pradesh", count: 2 }, geometry: { type: "Polygon", coordinates: [[[76.30, 21.40], [76.32, 21.40], [76.32, 21.38], [76.30, 21.38], [76.30, 21.40]]] }},
+      { type: "Feature", properties: { district: "Burhanpur", state: "Madhya Pradesh", count: 3 }, geometry: { type: "Polygon", coordinates: [[[76.15, 21.25], [76.17, 21.25], [76.17, 21.23], [76.15, 21.23], [76.15, 21.25]]] }},
+      // Madhya Pradesh: Seoni (5)
+      { type: "Feature", properties: { district: "Seoni", state: "Madhya Pradesh", count: 4 }, geometry: { type: "Polygon", coordinates: [[[79.55, 22.10], [79.57, 22.10], [79.57, 22.08], [79.55, 22.08], [79.55, 22.10]]] }},
+      { type: "Feature", properties: { district: "Seoni", state: "Madhya Pradesh", count: 5 }, geometry: { type: "Polygon", coordinates: [[[79.65, 22.20], [79.67, 22.20], [79.67, 22.18], [79.65, 22.18], [79.65, 22.20]]] }},
+      { type: "Feature", properties: { district: "Seoni", state: "Madhya Pradesh", count: 6 }, geometry: { type: "Polygon", coordinates: [[[79.75, 22.00], [79.77, 22.00], [79.77, 21.98], [79.75, 21.98], [79.75, 22.00]]] }},
+      { type: "Feature", properties: { district: "Seoni", state: "Madhya Pradesh", count: 7 }, geometry: { type: "Polygon", coordinates: [[[79.85, 22.30], [79.87, 22.30], [79.87, 22.28], [79.85, 22.28], [79.85, 22.30]]] }},
+      { type: "Feature", properties: { district: "Seoni", state: "Madhya Pradesh", count: 8 }, geometry: { type: "Polygon", coordinates: [[[79.95, 22.15], [79.97, 22.15], [79.97, 22.13], [79.95, 22.13], [79.95, 22.15]]] }},
+      // Telangana: Adilabad (4)
+      { type: "Feature", properties: { district: "Adilabad", state: "Telangana", count: 9 }, geometry: { type: "Polygon", coordinates: [[[78.50, 19.60], [78.52, 19.60], [78.52, 19.58], [78.50, 19.58], [78.50, 19.60]]] }},
+      { type: "Feature", properties: { district: "Adilabad", state: "Telangana", count: 10 }, geometry: { type: "Polygon", coordinates: [[[78.60, 19.70], [78.62, 19.70], [78.62, 19.68], [78.60, 19.68], [78.60, 19.70]]] }},
+      { type: "Feature", properties: { district: "Adilabad", state: "Telangana", count: 11 }, geometry: { type: "Polygon", coordinates: [[[78.70, 19.50], [78.72, 19.50], [78.72, 19.48], [78.70, 19.48], [78.70, 19.50]]] }},
+      { type: "Feature", properties: { district: "Adilabad", state: "Telangana", count: 12 }, geometry: { type: "Polygon", coordinates: [[[78.80, 19.80], [78.82, 19.80], [78.82, 19.78], [78.80, 19.78], [78.80, 19.80]]] }},
+      // Tripura: North Tripura (6)
+      { type: "Feature", properties: { district: "North Tripura", state: "Tripura", count: 13 }, geometry: { type: "Polygon", coordinates: [[[92.00, 24.30], [92.02, 24.30], [92.02, 24.28], [92.00, 24.28], [92.00, 24.30]]] }},
+      { type: "Feature", properties: { district: "North Tripura", state: "Tripura", count: 14 }, geometry: { type: "Polygon", coordinates: [[[92.10, 24.40], [92.12, 24.40], [92.12, 24.38], [92.10, 24.38], [92.10, 24.40]]] }},
+      { type: "Feature", properties: { district: "North Tripura", state: "Tripura", count: 15 }, geometry: { type: "Polygon", coordinates: [[[92.20, 24.20], [92.22, 24.20], [92.22, 24.18], [92.20, 24.18], [92.20, 24.20]]] }},
+      { type: "Feature", properties: { district: "North Tripura", state: "Tripura", count: 16 }, geometry: { type: "Polygon", coordinates: [[[92.30, 24.50], [92.32, 24.50], [92.32, 24.48], [92.30, 24.48], [92.30, 24.50]]] }},
+      { type: "Feature", properties: { district: "North Tripura", state: "Tripura", count: 17 }, geometry: { type: "Polygon", coordinates: [[[92.40, 24.10], [92.42, 24.10], [92.42, 24.08], [92.40, 24.08], [92.40, 24.10]]] }},
+      { type: "Feature", properties: { district: "North Tripura", state: "Tripura", count: 18 }, geometry: { type: "Polygon", coordinates: [[[92.50, 24.00], [92.52, 24.00], [92.52, 23.98], [92.50, 23.98], [92.50, 24.00]]] }},
+      // Odisha: Bhadrak (7)
+      { type: "Feature", properties: { district: "Bhadrak", state: "Odisha", count: 19 }, geometry: { type: "Polygon", coordinates: [[[86.50, 21.08], [86.52, 21.08], [86.52, 21.06], [86.50, 21.06], [86.50, 21.08]]] }},
+      { type: "Feature", properties: { district: "Bhadrak", state: "Odisha", count: 20 }, geometry: { type: "Polygon", coordinates: [[[86.60, 21.18], [86.62, 21.18], [86.62, 21.16], [86.60, 21.16], [86.60, 21.18]]] }},
+      { type: "Feature", properties: { district: "Bhadrak", state: "Odisha", count: 21 }, geometry: { type: "Polygon", coordinates: [[[86.70, 21.00], [86.72, 21.00], [86.72, 20.98], [86.70, 20.98], [86.70, 21.00]]] }},
+      { type: "Feature", properties: { district: "Bhadrak", state: "Odisha", count: 22 }, geometry: { type: "Polygon", coordinates: [[[86.80, 21.28], [86.82, 21.28], [86.82, 21.26], [86.80, 21.26], [86.80, 21.28]]] }},
+      { type: "Feature", properties: { district: "Bhadrak", state: "Odisha", count: 23 }, geometry: { type: "Polygon", coordinates: [[[86.90, 21.10], [86.92, 21.10], [86.92, 21.08], [86.90, 21.08], [86.90, 21.10]]] }},
+      { type: "Feature", properties: { district: "Bhadrak", state: "Odisha", count: 24 }, geometry: { type: "Polygon", coordinates: [[[87.00, 21.38], [87.02, 21.38], [87.02, 21.36], [87.00, 21.36], [87.00, 21.38]]] }},
+      { type: "Feature", properties: { district: "Bhadrak", state: "Odisha", count: 25 }, geometry: { type: "Polygon", coordinates: [[[87.10, 21.05], [87.12, 21.05], [87.12, 21.03], [87.10, 21.03], [87.10, 21.05]]] }}
+    ]
+  };
+
+  // The stateData object remains the same
+  // ... (stateData object is unchanged) ...
   const stateData = {
-    'madhya-pradesh': { 
-      name: 'Madhya Pradesh', color: '#1f78b4', fillColor: '#a6cee3', 
+    'madhya-pradesh': {
+      name: 'Madhya Pradesh', color: '#1f78b4', fillColor: '#a6cee3',
       districts: ['Burhanpur', 'Seoni', 'Alirajpur', 'Chhindwara', 'Harda', 'Khargone', 'Khandwa', 'Balaghat', 'Barwani', 'Betul', 'Morena', 'Bhind', 'Gwalior', 'Sheopur', 'Shivpuri', 'Tikamgarh', 'Neemuch', 'Rewa', 'Satna', 'Guna', 'Ashoknagar', 'Mandsaur', 'Singrauli', 'Sidhi', 'Sagar', 'Damoh', 'Shajapur', 'Vidisha', 'Rajgarh', 'Shahdol', 'Katni', 'Umaria', 'Ratlam', 'Bhopal', 'Ujjain', 'Raisen', 'Sehore', 'Jabalpur', 'Dewas', 'Anuppur', 'Jhabua', 'Dindori', 'Narsinghpur', 'Dhar', 'Indore', 'Mandla', 'Hoshangabad', 'Agar Malwa', 'Datia', 'Chhatarpur', 'Panna', 'Niwari'],
       stats: {
         claims_received: { Individual: '585,326', Community: '42,187', Total: '627,513' },
@@ -28,8 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
         percent_titles: '46.99%'
       }
     },
-    'telangana': { 
-      name: 'Telangana', color: '#33a02c', fillColor: '#b2df8a', 
+    'telangana': {
+      name: 'Telangana', color: '#33a02c', fillColor: '#b2df8a',
       districts: ['Adilabad', 'Hyderabad', 'Jagtial', 'Jangaon', 'Mulugu', 'Jogulamba Gadwal', 'Kamareddy', 'Karimnagar', 'Khammam', 'Komaram Bheem', 'Mahabubabad', 'Mahabubnagar', 'Mancherial', 'Medak', 'Medchal Malkajgiri', 'Nagarkurnool', 'Nalgonda', 'Nirmal', 'Nizamabad', 'Peddapalli', 'Rajanna Sircilla', 'Ranga Reddy', 'Sangareddy', 'Siddipet', 'Suryapet', 'Vikarabad', 'Wanaparthy', 'Warangal Rural', 'Warangal Urban', 'Yadadri Bhuvanagiri', 'Bhadradri Kothagudem', 'Jayashankar Bhupalapally', 'Narayanpet'],
       stats: {
         claims_received: { Individual: '651,822', Community: '3,427', Total: '655,249' },
@@ -41,8 +77,8 @@ document.addEventListener('DOMContentLoaded', () => {
         percent_titles: '35.32%'
       }
     },
-    'tripura': { 
-      name: 'Tripura', color: '#e31a1c', fillColor: '#fb9a99', 
+    'tripura': {
+      name: 'Tripura', color: '#e31a1c', fillColor: '#fb9a99',
       districts: ['North Tripura', 'Dhalai', 'Sipahijala', 'Gomati', 'Khowai', 'West Tripura', 'South Tripura', 'Unokoti'],
       stats: {
         claims_received: { Individual: '200,557', Community: '164', Total: '200,721' },
@@ -54,8 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
         percent_titles: '63.79%'
       }
     },
-    'odisha': { 
-      name: 'Odisha', color: '#ff7f00', fillColor: '#fdbf6f', 
+    'odisha': {
+      name: 'Odisha', color: '#ff7f00', fillColor: '#fdbf6f',
       districts: ['Bhadrak', 'Dhenkanal', 'Jajpur', 'Subarnapur', 'Nuapada', 'Balangir', 'Boudh', 'Cuttack', 'Kandhamal', 'Nayagarh', 'Khordha', 'Kalahandi', 'Jagatsinghpur', 'Puri', 'Nabarangapur', 'Rayagada', 'Koraput', 'Malkangiri', 'Angul', 'Kendrapara', 'Ganjam', 'Gajapati', 'Mayurbhanj', 'Sundargarh', 'Kendujhar', 'Balasore', 'Jharsuguda', 'Bargarh', 'Deogarh', 'Sambalpur'],
       stats: {
         claims_received: { Individual: '732,530', Community: '35,843', Total: '768,373' },
@@ -69,75 +105,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Hardcoded GeoJSON Polygons for Claims (Simplified small squares)
-  // Each feature must have a 'district' property to enable filtering.
-  const hardcodedClaimsData = [
-    // Madhya Pradesh - Burhanpur (3 Claims) - Approx center 21.3° N, 76.2° E
-    { district: 'Burhanpur', coords: [[[76.20, 21.30], [76.21, 21.30], [76.21, 21.31], [76.20, 21.31], [76.20, 21.30]]], claimId: 'MP-BH-001' },
-    { district: 'Burhanpur', coords: [[[76.15, 21.25], [76.16, 21.25], [76.16, 21.26], [76.15, 21.26], [76.15, 21.25]]], claimId: 'MP-BH-002' },
-    { district: 'Burhanpur', coords: [[[76.28, 21.40], [76.29, 21.40], [76.29, 21.41], [76.28, 21.41], [76.28, 21.40]]], claimId: 'MP-BH-003' },
-    
-    // Madhya Pradesh - Seoni (5 Claims) - Approx center 22.08° N, 79.5° E
-    { district: 'Seoni', coords: [[[79.50, 22.08], [79.51, 22.08], [79.51, 22.09], [79.50, 22.09], [79.50, 22.08]]], claimId: 'MP-SE-001' },
-    { district: 'Seoni', coords: [[[79.60, 22.15], [79.61, 22.15], [79.61, 22.16], [79.60, 22.16], [79.60, 22.15]]], claimId: 'MP-SE-002' },
-    { district: 'Seoni', coords: [[[79.40, 21.90], [79.41, 21.90], [79.41, 21.91], [79.40, 21.91], [79.40, 21.90]]], claimId: 'MP-SE-003' },
-    { district: 'Seoni', coords: [[[79.70, 22.00], [79.71, 22.00], [79.71, 22.01], [79.70, 22.01], [79.70, 22.00]]], claimId: 'MP-SE-004' },
-    { district: 'Seoni', coords: [[[79.30, 22.20], [79.31, 22.20], [79.31, 22.21], [79.30, 22.21], [79.30, 22.20]]], claimId: 'MP-SE-005' },
-
-    // Telangana - Adilabad (4 Claims) - Approx center 19.66° N, 78.53° E
-    { district: 'Adilabad', coords: [[[78.50, 19.60], [78.51, 19.60], [78.51, 19.61], [78.50, 19.61], [78.50, 19.60]]], claimId: 'TL-AD-001' },
-    { district: 'Adilabad', coords: [[[78.60, 19.70], [78.61, 19.70], [78.61, 19.71], [78.60, 19.71], [78.60, 19.70]]], claimId: 'TL-AD-002' },
-    { district: 'Adilabad', coords: [[[78.45, 19.50], [78.46, 19.50], [78.46, 19.51], [78.45, 19.51], [78.45, 19.50]]], claimId: 'TL-AD-003' },
-    { district: 'Adilabad', coords: [[[78.55, 19.80], [78.56, 19.80], [78.56, 19.81], [78.55, 19.81], [78.55, 19.80]]], claimId: 'TL-AD-004' },
-    
-    // Tripura - North Tripura (6 Claims) - Approx center 24.31° N, 92.01° E
-    { district: 'North Tripura', coords: [[[92.00, 24.30], [92.01, 24.30], [92.01, 24.31], [92.00, 24.31], [92.00, 24.30]]], claimId: 'TR-NT-001' },
-    { district: 'North Tripura', coords: [[[92.10, 24.35], [92.11, 24.35], [92.11, 24.36], [92.10, 24.36], [92.10, 24.35]]], claimId: 'TR-NT-002' },
-    { district: 'North Tripura', coords: [[[91.90, 24.20], [91.91, 24.20], [91.91, 24.21], [91.90, 24.21], [91.90, 24.20]]], claimId: 'TR-NT-003' },
-    { district: 'North Tripura', coords: [[[92.20, 24.40], [92.21, 24.40], [92.21, 24.41], [92.20, 24.41], [92.20, 24.40]]], claimId: 'TR-NT-004' },
-    { district: 'North Tripura', coords: [[[91.80, 24.50], [91.81, 24.50], [91.81, 24.51], [91.80, 24.51], [91.80, 24.50]]], claimId: 'TR-NT-005' },
-    { district: 'North Tripura', coords: [[[92.30, 24.60], [92.31, 24.60], [92.31, 24.61], [92.30, 24.61], [92.30, 24.60]]], claimId: 'TR-NT-006' },
-
-    // Odisha - Bhadrak (7 Claims) - Approx center 21.05° N, 86.5° E
-    { district: 'Bhadrak', coords: [[[86.50, 21.05], [86.51, 21.05], [86.51, 21.06], [86.50, 21.06], [86.50, 21.05]]], claimId: 'OD-BH-001' },
-    { district: 'Bhadrak', coords: [[[86.40, 21.10], [86.41, 21.10], [86.41, 21.11], [86.40, 21.11], [86.40, 21.10]]], claimId: 'OD-BH-002' },
-    { district: 'Bhadrak', coords: [[[86.60, 21.15], [86.61, 21.15], [86.61, 21.16], [86.60, 21.16], [86.60, 21.15]]], claimId: 'OD-BH-003' },
-    { district: 'Bhadrak', coords: [[[86.30, 21.00], [86.31, 21.00], [86.31, 21.01], [86.30, 21.01], [86.30, 21.00]]], claimId: 'OD-BH-004' },
-    { district: 'Bhadrak', coords: [[[86.70, 21.20], [86.71, 21.20], [86.71, 21.21], [86.70, 21.21], [86.70, 21.20]]], claimId: 'OD-BH-005' },
-    { district: 'Bhadrak', coords: [[[86.20, 20.90], [86.21, 20.90], [86.21, 20.91], [86.20, 20.91], [86.20, 20.90]]], claimId: 'OD-BH-006' },
-    { district: 'Bhadrak', coords: [[[86.80, 20.80], [86.81, 20.80], [86.81, 20.81], [86.80, 20.81], [86.80, 20.80]]], claimId: 'OD-BH-007' }
-  ];
-
 
   // --- DOM Elements ---
 
   const stateDropdown = document.getElementById('state-dropdown');
   const districtDropdown = document.getElementById('district-dropdown');
   const statusMessageDiv = document.getElementById('status-message');
+  
+  // 👇 NEW DOM Elements 👇
+  const statisticsSidebar = document.getElementById('statistics-sidebar');
   const statisticsPanel = document.getElementById('statistics-panel');
-  const stateNameHeader = document.getElementById('state-name-header');
-  const statsSidebar = document.getElementById('stats-sidebar');
-  const claimsCheckbox = document.getElementById('claims-checkbox');
-  const claimDateField = document.getElementById('claim-date');
+  const mapElement = document.getElementById('map');
+  const fraClaimsRadio = document.getElementById('fra-claims-radio');
+  const fraDateInput = document.getElementById('fra-date');
+  const otherLayerRadios = document.querySelectorAll('input[name="map-layer"]:not(#fra-claims-radio)'); // Placeholder for other layers
+  // 👆 NEW DOM Elements 👆
 
-  // --- Helper Functions ---
+  // --- Core Functions ---
 
   function clearLayer() {
     if (currentLayer) {
       map.removeLayer(currentLayer);
       currentLayer = null;
     }
-    claimsLayer.clearLayers();
-    
-    // Reset controls
-    claimsCheckbox.checked = false;
-    claimsCheckbox.disabled = true;
-    claimDateField.disabled = true;
-    
-    // Clear sidebar stats
-    statisticsPanel.innerHTML = '<p>Select a state to load data.</p>';
-    statsSidebar.classList.add('hidden'); // Hide the entire stats panel
+    // Statistics panel cleared only when a new state selection clears the map OR when the whole system is reset (not on district change)
+    // statisticsPanel.innerHTML = '<p>Select a state to view statistics.</p>'; 
   }
+  
+  // 👇 NEW Clear FRA Layer Function 👇
+  function clearFraLayer() {
+    if (fraClaimsLayer) {
+      map.removeLayer(fraClaimsLayer);
+      fraClaimsLayer = null;
+    }
+  }
+  // 👆 NEW Clear FRA Layer Function 👆
 
   function updateStatus(message, isError = false) {
     statusMessageDiv.innerHTML = message;
@@ -145,120 +147,157 @@ document.addEventListener('DOMContentLoaded', () => {
     statusMessageDiv.style.backgroundColor = isError ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)';
   }
 
+  // 👇 Modified renderStatistics to also control the right sidebar visibility 👇
   function renderStatistics(stateKey) {
-    const stats = stateData[stateKey].stats;
-    const stateName = stateData[stateKey].name;
+    if (!stateKey || !stateData[stateKey]) {
+      statisticsPanel.innerHTML = '<p>Select a state to view statistics.</p>';
+      statisticsSidebar.classList.remove('visible');
+      mapElement.classList.remove('stats-visible');
+      return;
+    }
     
-    stateNameHeader.textContent = stateName;
-    statsSidebar.classList.remove('hidden'); // Show the panel
+    const stats = stateData[stateKey].stats;
     
     // Function to format the three-part stats (Individual, Community, Total)
     const formatThreePartStat = (title, data, unit = '') => `
       <strong>${title}</strong>
       <ul>
-        <li><span>Individual:</span> <span>${data.Individual} ${unit}</span></li>
-        <li><span>Community:</span> <span>${data.Community} ${unit}</span></li>
-        <li><span>Total:</span> <span>${data.Total} ${unit}</span></li>
+        <li>Individual: ${data.Individual} ${unit}</li>
+        <li>Community: ${data.Community} ${unit}</li>
+        <li>Total: ${data.Total} ${unit}</li>
       </ul>
     `;
     
     statisticsPanel.innerHTML = `
-      ${formatThreePartStat('No. of claims received', stats.claims_received)}
-      ${formatThreePartStat('No. of titles distributed', stats.titles_distributed)}
-      ${formatThreePartStat('Extent of forest land titles (in acres)', stats.land_distributed)}
+      ${formatThreePartStat('No. of claims received upto 31.7.2025', stats.claims_received)}
+      ${formatThreePartStat('No. of titles distributed upto 31.7.2025', stats.titles_distributed)}
+      ${formatThreePartStat('Extent of forest land for which titles distributed', stats.land_distributed, 'acres')}
       
-      <strong>No. of claims rejected:</strong> <span>${stats.claims_rejected}</span><br>
-      <strong>Total No. of Claims Disposed off:</strong> <span>${stats.claims_disposed}</span><br>
+      <strong>No. of claims rejected:</strong> ${stats.claims_rejected}<br>
+      <strong>Total No. of Claims Disposed off:</strong> ${stats.claims_disposed}<br>
       
       <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 10px 0;">
       
-      <strong>% of Claims disposed off w.r.t. claims received:</strong> <span>${stats.percent_disposed}</span><br>
-      <strong>% of Titles distributed over number of claims received:</strong> <span>${stats.percent_titles}</span>
+      <strong>% of Claims disposed off w.r.t. claims received:</strong> ${stats.percent_disposed}<br>
+      <strong>% of Titles distributed over number of claims received:</strong> ${stats.percent_titles}
     `;
+    
+    statisticsSidebar.classList.add('visible');
+    mapElement.classList.add('stats-visible');
   }
+  // 👆 Modified renderStatistics 👆
   
-  // --- Claim Generation/Filtering ---
-  
-  const claimPopupContent = (claim) => `
-    <div style="font-family: Arial, sans-serif; font-size: 14px;">
-        <h4 style="margin-top: 0; color: #006400;">FRA Claim ID: ${claim.claimId}</h4>
-        <hr style="border-top: 1px solid #ccc;">
-        <p><strong>Note:</strong> Data below is placeholder. Please add actual details in the source code.</p>
-        <ul>
-            <li><strong>1. Name(s) of holder(s):</strong> [Individual/Community Name]</li>
-            <li><strong>2. Village/Gram Sabha:</strong> [Village Name]</li>
-            <li><strong>3. Gram Panchayat:</strong> [GP Name]</li>
-            <li><strong>4. Tehsil/Taluka:</strong> [Tehsil/Taluka Name]</li>
-            <li><strong>5. District:</strong> ${claim.district}</li>
-        </ul>
-    </div>
-  `;
+  // 👇 NEW FRA Layer Toggling Function 👇
+  function toggleFraLayer(stateKey, enable) {
+      clearFraLayer();
 
-  function filterAndDisplayClaims(stateKey, districtName = null) {
-      claimsLayer.clearLayers();
+      if (enable && stateKey && stateData[stateKey]) {
+          const stateConfig = stateData[stateKey];
+          const filteredFeatures = fraClaimsGeoJSON.features.filter(f => f.properties.state === stateConfig.name);
 
-      const filteredClaims = hardcodedClaimsData.filter(claim => {
-          // Filter by state first (all districts belong to the state)
-          const isStateMatch = stateData[stateKey].districts.includes(claim.district);
-
-          if (districtName) {
-              // If district is specified, only show claims in that district
-              return isStateMatch && claim.district === districtName;
-          } else {
-              // If only state is selected, show claims across all its hardcoded districts
-              return isStateMatch;
+          if (filteredFeatures.length === 0) {
+              updateStatus(`No FRA claim polygons available for ${stateConfig.name}.`, false);
+              return;
           }
-      });
-      
-      if (filteredClaims.length === 0) {
-          updateStatus('No hardcoded claims found for this selection.', true);
-          return;
+          
+          fraClaimsLayer = L.geoJSON({ type: "FeatureCollection", features: filteredFeatures }, {
+              style: (feature) => ({
+                  color: '#FF0000', // Red border
+                  fillColor: '#FF0000',
+                  fillOpacity: 0.7,
+                  weight: 1
+              }),
+              onEachFeature: (feature, layer) => {
+                  // Attach a popup/dialogue box
+                  // The polygon properties are placeholders, you will fill in the actual data.
+                  const props = feature.properties;
+                  const popupContent = `
+                      <strong>Community Forest Right Claim</strong><br>
+                      <hr style="border-color: #ddd;">
+                      1. Name(s) of the holder(s) of community forest right: ${props.holderName || 'N/A (Add details)'}<br>
+                      2. Village/Gram Sabha: ${props.village || 'N/A (Add details)'}<br>
+                      3. Gram Panchayat: ${props.gramPanchayat || 'N/A (Add details)'}<br>
+                      4. Tehsil/Taluka: ${props.tehsil || 'N/A (Add details)'}<br>
+                      5. District: <strong>${props.district}</strong>
+                  `;
+                  layer.bindPopup(popupContent);
+              }
+          }).addTo(map);
+
+          updateStatus(`${filteredFeatures.length} FRA claim area(s) for ${stateConfig.name} plotted.`);
+          
+          // Optional: Zoom to the plotted polygons
+          // map.fitBounds(fraClaimsLayer.getBounds());
+          
+      } else if (enable) {
+          updateStatus('Select a state first to view FRA claims.', false);
+      } else {
+          updateStatus('FRA claims layer cleared.');
       }
-
-      const features = filteredClaims.map(claim => ({
-          type: 'Feature',
-          geometry: {
-              type: 'Polygon',
-              coordinates: [claim.coords[0]]
-          },
-          properties: {
-              district: claim.district,
-              claimId: claim.claimId,
-              popupContent: claimPopupContent(claim)
-          }
-      }));
-
-      L.geoJSON(features, {
-          style: {
-              color: '#006400', 
-              fillColor: '#90EE90',
-              fillOpacity: 0.8,
-              weight: 2
-          },
-          onEachFeature: (feature, layer) => {
-              layer.bindPopup(feature.properties.popupContent);
-          }
-      }).addTo(claimsLayer);
-
-      updateStatus(`Displayed ${claimsLayer.getLayers().length} sample FRA claim polygons.`);
   }
+  // 👆 NEW FRA Layer Toggling Function 👆
 
+
+  // --- Initialization: Populate State Dropdown ---
+
+  Object.keys(stateData).forEach(key => {
+    const option = document.createElement('option');
+    option.value = key;
+    option.textContent = stateData[key].name;
+    stateDropdown.appendChild(option);
+  });
+  
+  // Also, set the default layer radio button (State boundary)
+  const defaultLayerRadio = document.querySelector('input[name="map-layer"][value="state-district"]');
+  if (!defaultLayerRadio) {
+      // Create a default radio button if one doesn't exist (assuming state/district is default)
+      const defaultRadioHtml = `
+          <div class="control-group layer-control">
+              <label>
+                  <input type="radio" name="map-layer" value="state-district" checked>
+                  State/District Boundary
+              </label>
+          </div>
+      `;
+      // Prepend it before the FRA control
+      document.querySelector('.layer-control').insertAdjacentHTML('beforebegin', defaultRadioHtml);
+      document.getElementById('state-dropdown').closest('.control-group').nextElementSibling.nextElementSibling.nextElementSibling.checked = true;
+  }
+  
   // --- Event Handlers (Modified) ---
 
   function handleStateSelection(stateKey) {
     clearLayer();
+    clearFraLayer(); // Ensure FRA layer is cleared on new state selection
+
+    // ... (rest of the state boundary loading logic is the same) ...
+    
+    // Set current bounds for the state (even if not used for query, helpful for map state)
+    let currentBounds = null;
     
     districtDropdown.innerHTML = '<option value="" disabled selected>-- Select a District --</option>';
     districtDropdown.disabled = true;
     
+    // 👇 Hide right panel and reset FRA radio if state is deselected 👇
     if (!stateKey) {
+      renderStatistics(null); // Hide stats panel
+      fraClaimsRadio.checked = false;
       updateStatus('Please select a State to begin.');
       return;
     }
+    // 👆 Hide right panel and reset FRA radio if state is deselected 👆
 
     const config = stateData[stateKey];
     updateStatus(`State selected: ${config.name}. Loading state boundary...`);
-    renderStatistics(stateKey); // RENDER STATS PANEL
+    
+    // Render the statistics immediately
+    renderStatistics(stateKey);
+    
+    // 👇 If FRA radio is checked, toggle the layer now for the newly selected state 👇
+    if (fraClaimsRadio.checked) {
+        toggleFraLayer(stateKey, true);
+    }
+    // 👆 If FRA radio is checked, toggle the layer now for the newly selected state 👆
 
     config.districts.forEach(distName => {
       const option = document.createElement('option');
@@ -268,9 +307,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     districtDropdown.disabled = false;
     
-    // Enable claim controls
-    claimsCheckbox.disabled = false;
-    claimDateField.disabled = false;
+    // Ensure state-district radio is checked when selecting a state
+    const stateDistrictRadio = document.querySelector('input[name="map-layer"][value="state-district"]');
+    if (stateDistrictRadio) stateDistrictRadio.checked = true;
+
 
     const stateFile = `${stateKey}.geojson`;
     
@@ -291,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         map.fitBounds(currentLayer.getBounds());
         
-        updateStatus(`State layer for ${config.name} loaded.`);
+        updateStatus(`State layer for ${config.name} loaded. Select a district.`);
       })
       .catch(err => {
         console.error(`Error loading state file ${stateFile}:`, err);
@@ -300,18 +340,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function handleDistrictSelection(stateKey, districtName) {
-    // Keep stats panel visible by only calling clearLayer for layer removal
-    if (currentLayer) map.removeLayer(currentLayer);
-    claimsLayer.clearLayers();
-    claimsCheckbox.checked = false; // Reset claims display
+    clearLayer(); 
+    clearFraLayer(); // Clear FRA layer on district change
+    
+    // Ensure state-district radio is checked
+    const stateDistrictRadio = document.querySelector('input[name="map-layer"][value="state-district"]');
+    if (stateDistrictRadio) stateDistrictRadio.checked = true;
 
+    // Render stats remains for context
     renderStatistics(stateKey); 
     
     if (!districtName) {
-        handleStateSelection(stateKey);
+        handleStateSelection(stateKey); // Fallback to state selection logic
         return;
     }
 
+    // ... (rest of the district loading logic is the same) ...
     const config = stateData[stateKey];
     const distFile = `${stateKey}Dist.geojson`;
     updateStatus(`District selected: ${districtName}. Loading district layer...`);
@@ -325,6 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let selectedFeatureBounds = null;
         
         const styleFeature = (feature) => {
+          // Using 'district' property
           const isSelected = feature.properties && feature.properties.district === districtName;
 
           if (isSelected) {
@@ -332,9 +377,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tempLayer = L.geoJSON(feature);
                 selectedFeatureBounds = tempLayer.getBounds();
             }
-            return { color: config.color, fillColor: config.fillColor, fillOpacity: 0.6, weight: 3 };
+            return {
+              color: config.color, 
+              fillColor: config.fillColor, 
+              fillOpacity: 0.6, // Increased transparency
+              weight: 3
+            };
           }
-          return { color: '#444', fillColor: '#888', fillOpacity: 0.1, weight: 1 };
+          // Style for other districts in the file (dimmed)
+          return {
+            color: '#444', 
+            fillColor: '#888',
+            fillOpacity: 0.1,
+            weight: 1
+          };
         };
 
         currentLayer = L.geoJSON(data, { style: styleFeature }).addTo(map);
@@ -345,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
             map.fitBounds(currentLayer.getBounds());
         }
 
-        updateStatus(`District layer for ${districtName} loaded. Check the 'Areas claimed' box to see sample claims.`);
+        updateStatus(`District layer for ${districtName} loaded.`);
       })
       .catch(err => {
         console.error(`Error loading district file ${distFile}:`, err);
@@ -355,43 +411,64 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // --- Event Listeners ---
 
-  // State Dropdown Change
+  // State Dropdown Change (unchanged)
   stateDropdown.addEventListener('change', (event) => {
     const stateKey = event.target.value;
     districtDropdown.value = ""; 
     handleStateSelection(stateKey);
   });
 
-  // District Dropdown Change
+  // District Dropdown Change (slightly modified fallback)
   districtDropdown.addEventListener('change', (event) => {
     const districtName = event.target.value;
     const stateKey = stateDropdown.value; 
     
     if (stateKey) {
-        handleDistrictSelection(stateKey, districtName);
-    }
+      handleDistrictSelection(stateKey, districtName);
+    } 
   });
-
-  // Claims Checkbox Toggle
-  claimsCheckbox.addEventListener('change', (event) => {
-      claimsLayer.clearLayers();
-      
-      const stateKey = stateDropdown.value;
-      const districtName = districtDropdown.value || null;
-
-      if (event.target.checked) {
-          if (stateKey) {
-              filterAndDisplayClaims(stateKey, districtName);
-          } else {
-              claimsCheckbox.checked = false;
-              updateStatus('Please select a State first.', true);
+  
+  // 👇 NEW Layer Radio Button Listener 👇
+  document.querySelectorAll('input[name="map-layer"]').forEach(radio => {
+      radio.addEventListener('change', (event) => {
+          const selectedLayer = event.target.value;
+          const stateKey = stateDropdown.value;
+          
+          if (!stateKey) {
+              updateStatus('Please select a State before choosing a layer.', true);
+              event.target.checked = false;
+              // Revert to default/uncheck all
+              const defaultRadio = document.querySelector('input[name="map-layer"][value="state-district"]');
+              if (defaultRadio) defaultRadio.checked = false;
+              clearLayer();
+              clearFraLayer();
+              return;
           }
-      } else {
-          updateStatus('FRA claimed areas visualization removed.');
-      }
+          
+          if (selectedLayer === 'fra-claims') {
+              // Clear state/district boundary layers
+              clearLayer();
+              // Load FRA layer
+              toggleFraLayer(stateKey, true);
+          } else if (selectedLayer === 'state-district') {
+              // Clear FRA layer
+              clearFraLayer();
+              // Re-run state selection logic (which handles boundary/district load)
+              if (districtDropdown.value && districtDropdown.value !== "-- Select a District --") {
+                  handleDistrictSelection(stateKey, districtDropdown.value);
+              } else {
+                  handleStateSelection(stateKey);
+              }
+          }
+          
+          // The date field is purely cosmetic in this implementation
+      });
   });
+  // 👆 NEW Layer Radio Button Listener 👆
 
-
+  // Initial state logic
+  renderStatistics(null); // Ensures right panel is hidden on load
+  
   // Initial message
   updateStatus('Welcome to the WebGIS system. Select a state to begin.');
 });
