@@ -11,34 +11,40 @@
 <body>
 
   <div id="topbar">
-    <h1>WebGIS Control Panel</h1>
-
-    <div class="control-group">
-      <label for="state-dropdown">Select State:</label>
-      <select id="state-dropdown" name="state">
-        <option value="" disabled selected>-- Choose a State --</option>
-      </select>
+    <div id="topbar-header">
+      <h1>WebGIS Control Panel</h1>
+      <button id="collapse-toggle" aria-expanded="true" title="Collapse Controls">
+        &#9650; </button>
     </div>
 
-    <div class="control-group">
-      <label for="district-dropdown">Select District:</label>
-      <select id="district-dropdown" name="district" disabled>
-        <option value="" disabled selected>-- Select a State First --</option>
-      </select>
-    </div>
+    <div id="topbar-content" class="expanded">
+      <div class="control-group">
+        <label for="state-dropdown">Select State:</label>
+        <select id="state-dropdown" name="state">
+          <option value="" disabled selected>-- Choose a State --</option>
+        </select>
+      </div>
 
-    <div class="control-group layer-control">
-      <label>Map Layer:</label>
-      <label>
-        <input type="radio" name="map-layer" value="state-district" id="state-district-radio" checked>
-        Boundary
-      </label>
-      <label>
-        <input type="radio" name="map-layer" value="fra-claims" id="fra-claims-radio">
-        FRA Claims
-      </label>
-      <div id="fra-date-control" class="date-control">
-          <input type="date" id="fra-date" value="2025-07-31" title="Data Date (Ignored in current version)">
+      <div class="control-group">
+        <label for="district-dropdown">Select District:</label>
+        <select id="district-dropdown" name="district" disabled>
+          <option value="" disabled selected>-- Select a State First --</option>
+        </select>
+      </div>
+
+      <div class="control-group layer-control">
+        <label>Map Layer:</label>
+        <label>
+          <input type="radio" name="map-layer" value="state-district" id="state-district-radio" checked>
+          Boundary
+        </label>
+        <label>
+          <input type="radio" name="map-layer" value="fra-claims" id="fra-claims-radio">
+          FRA Claims
+        </label>
+        <div id="fra-date-control" class="date-control">
+            <input type="date" id="fra-date" value="2025-07-31" title="Data Date (Ignored in current version)">
+        </div>
       </div>
     </div>
   </div>
