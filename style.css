@@ -10,7 +10,7 @@ html, body {
   position: fixed;
   top: 0;
   left: 0;
-  width: 280px; 
+  width: 280px; /* Slightly wider for better control display */
   height: 100%;
   background-color: #228b22; /* Forest Green */
   color: #fff;
@@ -62,27 +62,39 @@ label {
   cursor: not-allowed;
 }
 
-.landuse-control label {
-    font-weight: normal;
-    margin-bottom: 5px;
-    display: flex;
-    align-items: center;
+/* Statistics Panel Styling */
+#statistics-panel {
+    font-size: 0.9em;
+    line-height: 1.4;
 }
 
-.landuse-control input[type="radio"] {
-    margin-right: 8px;
+#statistics-panel strong {
+    color: #FFD700; /* Gold for emphasis */
+    display: block;
+    margin-top: 8px;
 }
 
+#statistics-panel ul {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 15px 0;
+}
+
+#statistics-panel li {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 5px;
+    margin-bottom: 3px;
+    border-radius: 3px;
+}
 
 .status-message {
   margin-top: 20px;
   padding: 10px;
-  /* Removed success styling, focusing on current state */
   background-color: rgba(0, 0, 0, 0.1); 
   border-radius: 6px;
   min-height: 40px;
   font-size: 0.9em;
-  color: #c8e6c9; /* Light green text */
+  color: #c8e6c9;
 }
 
 /* Map Styling */
@@ -93,7 +105,7 @@ label {
   transition: margin-left 0.3s ease;
 }
 
-/* Responsive adjustment for small screens (same as before) */
+/* Responsive adjustment for small screens */
 @media (max-width: 768px) {
   #sidebar {
     width: 100%;
