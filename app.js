@@ -73,38 +73,38 @@ document.addEventListener('DOMContentLoaded', () => {
         "features": [
             // Madhya Pradesh - Burhanpur (3 Polygons)
             createDummyPolygon(21.28, 76.16, 'Madhya Pradesh', 'Burhanpur', 1),
-            createDummyPolygon(21.29, 76.20, 'Madhya Pradesh', 'Burhanpur', 2),
-            createDummyPolygon(21.27, 76.23, 'Madhya Pradesh', 'Burhanpur', 3),
+            createDummyPolygon(26.29, 69.20, 'Madhya Pradesh', 'Burhanpur', 2),
+            createDummyPolygon(18.27, 86.23, 'Madhya Pradesh', 'Burhanpur', 3),
 
             // Madhya Pradesh - Seoni (5 Polygons)
             createDummyPolygon(22.08, 79.54, 'Madhya Pradesh', 'Seoni', 4),
-            createDummyPolygon(22.10, 79.50, 'Madhya Pradesh', 'Seoni', 5),
-            createDummyPolygon(22.12, 79.46, 'Madhya Pradesh', 'Seoni', 6),
-            createDummyPolygon(22.14, 79.42, 'Madhya Pradesh', 'Seoni', 7),
+            createDummyPolygon(18.10, 81.50, 'Madhya Pradesh', 'Seoni', 5),
+            createDummyPolygon(24.12, 75.46, 'Madhya Pradesh', 'Seoni', 6),
+            createDummyPolygon(16.14, 86.42, 'Madhya Pradesh', 'Seoni', 7),
             createDummyPolygon(22.16, 79.38, 'Madhya Pradesh', 'Seoni', 8),
 
             // Telangana - Adilabad (4 Polygons)
             createDummyPolygon(19.66, 78.50, 'Telangana', 'Adilabad', 9),
-            createDummyPolygon(19.68, 78.54, 'Telangana', 'Adilabad', 10),
-            createDummyPolygon(19.70, 78.58, 'Telangana', 'Adilabad', 11),
+            createDummyPolygon(16.68, 74.54, 'Telangana', 'Adilabad', 10),
+            createDummyPolygon(23.70, 81.58, 'Telangana', 'Adilabad', 11),
             createDummyPolygon(19.72, 78.62, 'Telangana', 'Adilabad', 12),
 
             // Tripura - North Tripura (6 Polygons)
             createDummyPolygon(24.38, 92.00, 'Tripura', 'North Tripura', 13),
-            createDummyPolygon(24.40, 92.04, 'Tripura', 'North Tripura', 14),
-            createDummyPolygon(24.42, 92.08, 'Tripura', 'North Tripura', 15),
-            createDummyPolygon(24.44, 92.12, 'Tripura', 'North Tripura', 16),
-            createDummyPolygon(24.46, 92.16, 'Tripura', 'North Tripura', 17),
-            createDummyPolygon(24.48, 92.20, 'Tripura', 'North Tripura', 18),
+            createDummyPolygon(29.40, 89.04, 'Tripura', 'North Tripura', 14),
+            createDummyPolygon(20.42, 96.08, 'Tripura', 'North Tripura', 15),
+            createDummyPolygon(27.44, 94.12, 'Tripura', 'North Tripura', 16),
+            createDummyPolygon(18.46, 87.16, 'Tripura', 'North Tripura', 17),
+            createDummyPolygon(19.48, 92.20, 'Tripura', 'North Tripura', 18),
 
             // Odisha - Bhadrak (7 Polygons)
             createDummyPolygon(21.06, 86.84, 'Odisha', 'Bhadrak', 19),
-            createDummyPolygon(21.08, 86.88, 'Odisha', 'Bhadrak', 20),
-            createDummyPolygon(21.10, 86.92, 'Odisha', 'Bhadrak', 21),
-            createDummyPolygon(21.12, 86.96, 'Odisha', 'Bhadrak', 22),
-            createDummyPolygon(21.14, 87.00, 'Odisha', 'Bhadrak', 23),
-            createDummyPolygon(21.16, 87.04, 'Odisha', 'Bhadrak', 24),
-            createDummyPolygon(21.18, 87.08, 'Odisha', 'Bhadrak', 25)
+            createDummyPolygon(25.08, 86.88, 'Odisha', 'Bhadrak', 20),
+            createDummyPolygon(20.10, 90.92, 'Odisha', 'Bhadrak', 21),
+            createDummyPolygon(18.12, 84.96, 'Odisha', 'Bhadrak', 22),
+            createDummyPolygon(19.14, 92.00, 'Odisha', 'Bhadrak', 23),
+            createDummyPolygon(17.16, 83.04, 'Odisha', 'Bhadrak', 24),
+            createDummyPolygon(21.18, 90.08, 'Odisha', 'Bhadrak', 25)
         ]
     };
 
