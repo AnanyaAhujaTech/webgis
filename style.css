@@ -2,26 +2,50 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  display: flex;
+  font-family: Arial, sans-serif; /* Added for better readability */
 }
 
+/* Sidebar Styling */
 #sidebar {
-  width: 250px;
-  background: #fff;
-  padding: 15px;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.2);
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-  z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px; /* Fixed width for the sidebar */
+  height: 100%;
+  background-color: #f7f7f7;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  z-index: 1000; /* Ensure it's on top of the map */
+  overflow-y: auto; /* Scrollable if content overflows */
 }
 
-#map {
-  flex: 1;
-  height: 100vh;
+#sidebar h2 {
+  margin-top: 0;
+  color: #333;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 10px;
 }
 
-#stateDropdown {
+.control-group {
+  margin-bottom: 20px;
+}
+
+#state-dropdown {
   width: 100%;
-  padding: 6px;
-  font-size: 14px;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+/* Map Styling */
+#map {
+  width: calc(100% - 250px); /* Map takes the remaining width */
+  height: 100vh;
+  margin-left: 250px; /* Offset the map to start after the sidebar */
+}
+
+/* Leaflet Attribution Styling */
+.leaflet-control-attribution {
+  font-size: 12px;
 }
