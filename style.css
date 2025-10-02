@@ -2,50 +2,88 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: Arial, sans-serif; /* Added for better readability */
+  font-family: 'Inter', sans-serif;
 }
 
-/* Sidebar Styling */
+/* Sidebar Styling - Now Forest Green */
 #sidebar {
   position: fixed;
   top: 0;
   left: 0;
-  width: 250px; /* Fixed width for the sidebar */
+  width: 280px; /* Slightly wider for better control display */
   height: 100%;
-  background-color: #f7f7f7;
+  background-color: #228b22; /* Forest Green */
+  color: #fff;
   padding: 20px;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-  z-index: 1000; /* Ensure it's on top of the map */
-  overflow-y: auto; /* Scrollable if content overflows */
+  box-shadow: 2px 0 8px rgba(0,0,0,0.3);
+  z-index: 1000;
+  overflow-y: auto;
 }
 
-#sidebar h2 {
+#sidebar h1 {
   margin-top: 0;
-  color: #333;
-  border-bottom: 2px solid #ddd;
+  color: #fff;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.5);
   padding-bottom: 10px;
+  font-size: 1.5rem;
 }
 
 .control-group {
   margin-bottom: 20px;
 }
 
-#state-dropdown {
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+/* Dropdown styling */
+#state-dropdown, #district-dropdown {
   width: 100%;
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #c8e6c9;
+  box-sizing: border-box;
+  background-color: #f1f8f1;
+  color: #333;
+  transition: all 0.3s ease;
+}
+
+#district-dropdown:disabled {
+  background-color: #aaa;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.status-message {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  min-height: 40px;
+  font-size: 0.9em;
 }
 
 /* Map Styling */
 #map {
-  width: calc(100% - 250px); /* Map takes the remaining width */
+  width: calc(100% - 280px); /* Map takes the remaining width */
   height: 100vh;
-  margin-left: 250px; /* Offset the map to start after the sidebar */
+  margin-left: 280px; /* Offset the map to start after the sidebar */
+  transition: margin-left 0.3s ease; /* For smooth transitions if width changed */
 }
 
-/* Leaflet Attribution Styling */
-.leaflet-control-attribution {
-  font-size: 12px;
+/* Responsive adjustment for small screens */
+@media (max-width: 768px) {
+  #sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+  #map {
+    width: 100%;
+    margin-left: 0;
+    height: calc(100vh - 300px); /* Adjust height for the visible sidebar */
+  }
 }
