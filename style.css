@@ -2,13 +2,26 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
+  display: flex;
+}
+
+#sidebar {
+  width: 250px;
+  background: #fff;
+  padding: 15px;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  z-index: 1000;
 }
 
 #map {
-  width: 100%;
+  flex: 1;
   height: 100vh;
 }
 
-.leaflet-control-attribution {
-  font-size: 12px;
+#stateDropdown {
+  width: 100%;
+  padding: 6px;
+  font-size: 14px;
 }
