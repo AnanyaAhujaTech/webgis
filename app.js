@@ -67,50 +67,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // GeoJSON for the dummy claims (Unchanged)
+    // GeoJSON for the dummy claims (UPDATED COORDINATES AND SPACING)
     const fraClaimsGeoJSON = {
         "type": "FeatureCollection",
         "features": [
-            // Madhya Pradesh - Burhanpur (3 Polygons)
-            createDummyPolygon(21.28, 76.16, 'Madhya Pradesh', 'Burhanpur', 1),
-            createDummyPolygon(26.29, 69.20, 'Madhya Pradesh', 'Burhanpur', 2),
-            createDummyPolygon(18.27, 86.23, 'Madhya Pradesh', 'Burhanpur', 3),
+            // Madhya Pradesh - Burhanpur (3 Polygons) - Coordinates adjusted for spacing
+            createDummyPolygon(21.20, 76.10, 'Madhya Pradesh', 'Burhanpur', 1),
+            createDummyPolygon(21.35, 76.30, 'Madhya Pradesh', 'Burhanpur', 2),
+            createDummyPolygon(21.15, 76.45, 'Madhya Pradesh', 'Burhanpur', 3),
 
-            // Madhya Pradesh - Seoni (5 Polygons)
-            createDummyPolygon(22.08, 79.54, 'Madhya Pradesh', 'Seoni', 4),
-            createDummyPolygon(18.10, 81.50, 'Madhya Pradesh', 'Seoni', 5),
-            createDummyPolygon(24.12, 75.46, 'Madhya Pradesh', 'Seoni', 6),
-            createDummyPolygon(16.14, 86.42, 'Madhya Pradesh', 'Seoni', 7),
-            createDummyPolygon(22.16, 79.38, 'Madhya Pradesh', 'Seoni', 8),
+            // Madhya Pradesh - Seoni (5 Polygons) - Coordinates adjusted for spacing
+            createDummyPolygon(22.05, 79.20, 'Madhya Pradesh', 'Seoni', 4),
+            createDummyPolygon(22.15, 79.50, 'Madhya Pradesh', 'Seoni', 5),
+            createDummyPolygon(21.90, 79.70, 'Madhya Pradesh', 'Seoni', 6),
+            createDummyPolygon(22.25, 79.35, 'Madhya Pradesh', 'Seoni', 7),
+            createDummyPolygon(22.00, 79.85, 'Madhya Pradesh', 'Seoni', 8),
 
-            // Telangana - Adilabad (4 Polygons)
-            createDummyPolygon(19.66, 78.50, 'Telangana', 'Adilabad', 9),
-            createDummyPolygon(16.68, 74.54, 'Telangana', 'Adilabad', 10),
-            createDummyPolygon(23.70, 81.58, 'Telangana', 'Adilabad', 11),
-            createDummyPolygon(19.72, 78.62, 'Telangana', 'Adilabad', 12),
+            // Telangana - Adilabad (4 Polygons) - Coordinates adjusted for spacing
+            createDummyPolygon(19.40, 78.40, 'Telangana', 'Adilabad', 9),
+            createDummyPolygon(19.70, 78.65, 'Telangana', 'Adilabad', 10),
+            createDummyPolygon(19.55, 78.90, 'Telangana', 'Adilabad', 11),
+            createDummyPolygon(19.85, 78.75, 'Telangana', 'Adilabad', 12),
 
-            // Tripura - North Tripura (6 Polygons)
-            createDummyPolygon(24.38, 92.00, 'Tripura', 'North Tripura', 13),
-            createDummyPolygon(29.40, 89.04, 'Tripura', 'North Tripura', 14),
-            createDummyPolygon(20.42, 96.08, 'Tripura', 'North Tripura', 15),
-            createDummyPolygon(27.44, 94.12, 'Tripura', 'North Tripura', 16),
-            createDummyPolygon(18.46, 87.16, 'Tripura', 'North Tripura', 17),
-            createDummyPolygon(19.48, 92.20, 'Tripura', 'North Tripura', 18),
+            // Tripura - North Tripura (6 Polygons) - Coordinates adjusted for spacing
+            createDummyPolygon(24.30, 91.80, 'Tripura', 'North Tripura', 13),
+            createDummyPolygon(24.45, 92.10, 'Tripura', 'North Tripura', 14),
+            createDummyPolygon(24.20, 92.25, 'Tripura', 'North Tripura', 15),
+            createDummyPolygon(24.50, 91.95, 'Tripura', 'North Tripura', 16),
+            createDummyPolygon(24.35, 92.30, 'Tripura', 'North Tripura', 17),
+            createDummyPolygon(24.55, 92.15, 'Tripura', 'North Tripura', 18),
 
-            // Odisha - Bhadrak (7 Polygons)
-            createDummyPolygon(21.06, 86.84, 'Odisha', 'Bhadrak', 19),
-            createDummyPolygon(25.08, 86.88, 'Odisha', 'Bhadrak', 20),
-            createDummyPolygon(20.10, 90.92, 'Odisha', 'Bhadrak', 21),
-            createDummyPolygon(18.12, 84.96, 'Odisha', 'Bhadrak', 22),
-            createDummyPolygon(19.14, 92.00, 'Odisha', 'Bhadrak', 23),
-            createDummyPolygon(17.16, 83.04, 'Odisha', 'Bhadrak', 24),
-            createDummyPolygon(21.18, 90.08, 'Odisha', 'Bhadrak', 25)
+            // Odisha - Bhadrak (7 Polygons) - Coordinates adjusted for spacing
+            createDummyPolygon(21.10, 86.60, 'Odisha', 'Bhadrak', 19),
+            createDummyPolygon(20.95, 86.85, 'Odisha', 'Bhadrak', 20),
+            createDummyPolygon(21.25, 87.00, 'Odisha', 'Bhadrak', 21),
+            createDummyPolygon(21.05, 87.20, 'Odisha', 'Bhadrak', 22),
+            createDummyPolygon(21.30, 86.75, 'Odisha', 'Bhadrak', 23),
+            createDummyPolygon(20.90, 87.05, 'Odisha', 'Bhadrak', 24),
+            createDummyPolygon(21.15, 86.95, 'Odisha', 'Bhadrak', 25)
         ]
     };
 
-    // Function to create a small polygon feature for demonstration (Unchanged)
+    // Function to create a polygon feature for demonstration (UPDATED SIZE)
     function createDummyPolygon(lat, lon, state, district, id) {
-        const size = 0.005; // Size in degrees
+        // Increased size for wider polygons (0.005 -> 0.01)
+        const size = 0.01; 
         return {
             "type": "Feature",
             "properties": {
@@ -119,12 +120,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 "District": district,
                 "Name_Holders": `Holder A, B (ID: ${id})`,
                 "Village": `Village ${id}`,
-                "GP": `GP ${id}`,
+                "GP": `Gram Panchayat ${id}`,
                 "Tehsil": `Tehsil ${id}`
             },
             "geometry": {
                 "type": "Polygon",
                 "coordinates": [
+                    // Ensure the coordinates form a closed shape with the new size
                     [[lon, lat], [lon + size, lat], [lon + size, lat + size], [lon, lat + size], [lon, lat]]
                 ]
             }
