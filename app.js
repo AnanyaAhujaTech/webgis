@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentLayer = null; // State or District GeoJSON layer
   let landUseLayer = L.layerGroup().addTo(map); // Layer group for OSM data (Forest/Agri)
-  let currentBounds = null; // Stores the bounds of the current state/district selection
+  let currentBounds = null; // Stores the bounds of the current state/district selection (no longer used for query, but kept for future reference)
 
   // --- Configuration ---
   const stateData = {
@@ -47,6 +47,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const agriRadio = document.getElementById('agri-radio');
   const landuseForm = document.getElementById('landuse-form');
 
+  // --- Helper: Toggle UI state during query ---
+  function toggleQueryState(isQuerying) {
+    document.body.style.cursor = isQuerying ? 'wait' : 'default';
+    // Lock controls to prevent accidental double-clicks or reloads during a query
+    forestRadio.disabled = isQuerying;
+    agriRadio.disabled = isQuerying;
+    stateDropdown.disabled = isQuerying;
+    districtDropdown.disabled = isQuerying;
+  }
+  // ---------------------------------------------
+
+
   // --- Initialization: Populate State Dropdown ---
 
   Object.keys(stateData).forEach(key => {
@@ -72,25 +84,33 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateStatus(message, isError = false) {
-    // Removed success message logic, keeping only alerts/info
     statusMessageDiv.innerHTML = message;
     statusMessageDiv.style.color = isError ? '#ffdddd' : '#c8e6c9';
     statusMessageDiv.style.backgroundColor = isError ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)';
   }
 
-  // --- Overpass Query Functions ---
+  // --- Overpass Query Functions (UPDATED) ---
 
   function queryOverpass(layerType) {
-    if (!currentBounds) {
+    // Check if the state/district controls are currently disabled (meaning nothing is selected)
+    if (stateDropdown.disabled && districtDropdown.disabled) {
         updateStatus('Select a State or District first to query land use data.', true);
         return;
     }
     
     landUseLayer.clearLayers();
     const style = landUseStyles[layerType];
-    const bounds = currentBounds.toBBoxString().split(',').reverse().join(','); // Format: lat_min, lon_min, lat_max, lon_max
     
-    updateStatus(`Querying OpenStreetMap for ${layerType}...`);
+    // --- FIX 1: Use the current map viewport bounds for the query ---
+    const mapBounds = map.getBounds();
+    // Format: lat_min, lon_min, lat_max, lon_max
+    const bounds = mapBounds.toBBoxString().split(',').reverse().join(','); 
+    // -----------------------------------------------------------------
+
+    // --- FIX 2: Set query state and display immediate feedback ---
+    toggleQueryState(true);
+    updateStatus(`Querying OpenStreetMap for ${layerType} within current view... (May take time)`);
+    // -------------------------------------------------------------
 
     // Overpass Query Language (QL) to find areas within the bounds
     const overpassQL = `
@@ -109,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const omnivoreLayer = omnivore.overpass(overpassUrl, {
         onEachFeature: function(feature, layer) {
              // Optional: Bind popup with feature tags
-             // layer.bindPopup(Object.entries(feature.properties).map(([k,v]) => `<b>${k}:</b> ${v}`).join('<br>'));
         }
     }, L.geoJSON(null, {
         style: style // Apply the layer's dedicated style
@@ -118,10 +137,13 @@ document.addEventListener('DOMContentLoaded', () => {
     omnivoreLayer
         .on('ready', function() {
             landUseLayer.addLayer(this);
-            updateStatus(`${layerType} layer loaded from OpenStreetMap.`);
+            updateStatus(`${layerType} layer loaded (visible in current view). Zoom in/out to query a different area.`);
+            toggleQueryState(false); // End query state
         })
-        .on('error', function() {
-             updateStatus(`Error querying Overpass API for ${layerType}. The area might be too large or the server is busy.`, true);
+        .on('error', function(e) {
+             console.error('Overpass API Error:', e);
+             updateStatus(`Error: Query failed. Try zooming in to a smaller area.`, true);
+             toggleQueryState(false); // End query state
         });
   }
 
@@ -199,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const isSelected = feature.properties && feature.properties.district === districtName;
 
           if (isSelected) {
-            // Save the bounds of the selected feature for OSM query and map zoom
+            // Save the bounds of the selected feature for map zoom
             if (!selectedFeatureBounds) {
                 const tempLayer = L.geoJSON(feature);
                 selectedFeatureBounds = tempLayer.getBounds();
