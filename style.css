@@ -14,7 +14,7 @@ html, body {
     width: 100%;
     background-color: #228b22; /* Forest Green */
     color: #fff;
-    padding: 5px 30px; /* INCREASED HORIZONTAL PADDING (20px -> 30px) */
+    padding: 5px 60px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     z-index: 1000;
     overflow-y: auto;
