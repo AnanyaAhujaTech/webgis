@@ -24,7 +24,7 @@ html, body {
 
 #top-bar.collapsed {
     height: 38px; /* Thinner height for the title bar */
-    padding-top: 5px;
+    padding-top: 7px;
     padding-bottom: 5px;
 }
 
