@@ -311,15 +311,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const popupContent = `
                     <strong>FRA Claim/Title Details</strong><br>
                     <hr style="margin: 5px 0; border-color: #ddd;">
-                    1. **Claim ID**: ${props.id}<br>
-                    2. **Claim/Title Type**: <strong>${props.Claim_Type}</strong><br>
-                    3. **Status**: ${props.Status}<br>
-                    4. **Name(s) of Holder(s)**: ${props.Name_Holders || 'N/A'}<br>
-                    5. **Area (Hectares)**: ${props.Area_Hectares}<br>
-                    6. **Title No.**: ${props.Title_No}<br>
-                    7. **Village/Gram Sabha**: ${props.Village || 'N/A'}<br>
-                    8. **Gram Panchayat**: ${props.GP || 'N/A'}<br>
-                    9. **Tehsil/Taluka**: ${props.Tehsil || 'N/A'}
+                    1. Claim ID: ${props.id}<br>
+                    2. Claim/Title Type: <strong>${props.Claim_Type}</strong><br>
+                    3. Status: ${props.Status}<br>
+                    4. Name(s) of Holder(s): ${props.Name_Holders || 'N/A'}<br>
+                    5. Area (Hectares): ${props.Area_Hectares}<br>
+                    6. Title No.: ${props.Title_No}<br>
+                    7. Village/Gram Sabha: ${props.Village || 'N/A'}<br>
+                    8. Gram Panchayat: ${props.GP || 'N/A'}<br>
+                    9. Tehsil/Taluka: ${props.Tehsil || 'N/A'}
                 `;
                 layer.bindPopup(popupContent);
             }
