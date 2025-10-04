@@ -185,7 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const fraClaimsRadio = document.getElementById('fra-claims-radio');
     const boundariesRadio = document.getElementById('boundaries-radio'); 
     const statsSidebar = document.getElementById('stats-sidebar');
-    // NEW DOM ELEMENT
     const sidebarToggleButton = document.getElementById('sidebar-toggle-button'); 
 
     // --- Core Functions ---
@@ -223,8 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Toggles the visibility of the statistics sidebar and invalidates the map size.
-     * * FINAL RULE IMPLEMENTATION: Sidebar must be hidden if a district is selected (districtDropdown.value is set).
-     * * @param {boolean} show - The desired state of the sidebar (true to show, false to hide).
+     * @param {boolean} show - The desired state of the sidebar (true to show, false to hide).
      */
     function toggleStatsSidebar(show) {
         const stateSelected = stateDropdown.value !== "";
@@ -374,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let targetBounds = null; // Will hold the bounds of the state OR selected district
 
                 if (districtName) {
-                    // Pre-calculate bounds for the *selected* district first (Fix for zoom glitch)
+                    // FIX: Pre-calculate bounds for the *selected* district first (Fix for zoom glitch)
                     const selectedFeature = data.features.find(f => 
                         f.properties && f.properties.district === districtName
                     );
@@ -393,8 +391,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         : true; 
                     
                     return {
-                        color: isSelected ? config.color : '#444',
+                        // Ensure colors are applied correctly for both cases
+                        color: isSelected ? config.color : '#444', 
                         fillColor: isSelected ? config.fillColor : '#888',
+                        // Ensure the selected district is prominently highlighted
                         fillOpacity: isSelected && districtName ? 0.6 : 0.3,
                         weight: isSelected && districtName ? 3 : 1
                     };
