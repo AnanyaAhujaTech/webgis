@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const map = L.map('map').setView([22.5937, 78.9629], 5);
 
+    // Initial Base Layer (OpenStreetMap standard tiles)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
@@ -10,9 +11,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentLayer = null; // State or District GeoJSON layer (Boundaries)
     let fraClaimsLayer = null; // Layer for the small polygons (FRA Claims)
-    let forestCoverLayer = null; // NEW: Bhuvan WMS Layer
     
-    // --- Configuration & Data ---
+    // NEW: Base layers for swapping
+    const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    });
+
+    const esriWorldImageryLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+        maxZoom: 18
+    });
+    
+    // Start with the default OSM layer
+    openStreetMapLayer.addTo(map);
+
+
+    // --- Configuration & Data (remains the same) ---
     const stateData = {
         'madhya-pradesh': {
             name: 'Madhya Pradesh', color: '#1f78b4', fillColor: '#a6cee3',
@@ -68,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Custom name list for popups
+    // Custom name list for popups (remains the same)
     const holderNames = [
         "Sunder Das Ahuja", "Harvardhan Kumar", "Rajesh Gupta", "Arth Goyal", "Dinesh Ghai", 
         "Tripti Rao", "Ramesh Shankar", "Manoj Roy", "Ridhi Kumari", "Radha Rani", 
@@ -76,32 +91,21 @@ document.addEventListener('DOMContentLoaded', () => {
         "Nitin Jhangra", "Pankaj Choudhari", "Pooja Tripathi", "Preet Bajpayee"
     ];
 
-    /**
-     * Helper function to get a random item from an array.
-     */
     const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-    /**
-     * Generates a square GeoJSON polygon feature centered at [lat, lon].
-     */
     function createDummySquarePolygon(lat, lon, state, district, id) {
-        // Base size for the claim area (in degrees, slightly smaller than old)
         const size = 0.005; 
         const halfSize = size / 2;
         
         const vertices = [
-            [lon - halfSize, lat - halfSize], // SW
-            [lon + halfSize, lat - halfSize], // SE
-            [lon + halfSize, lat + halfSize], // NE
-            [lon - halfSize, lat + halfSize], // NW
-            [lon - halfSize, lat - halfSize]  // Close the loop
+            [lon - halfSize, lat - halfSize], [lon + halfSize, lat - halfSize], 
+            [lon + halfSize, lat + halfSize], [lon - halfSize, lat + halfSize], 
+            [lon - halfSize, lat - halfSize] 
         ];
         
-        // Use a random value to determine if it's Individual or Community
-        const isIndividual = Math.random() < 0.6; // 60% chance of being individual
+        const isIndividual = Math.random() < 0.6; 
         const claimType = isIndividual ? 'Individual' : 'Community';
-        
-        const areaHectares = (Math.random() * (10.0 - 0.5) + 0.5).toFixed(2); // 0.5 to 10.0 hectares
+        const areaHectares = (Math.random() * (10.0 - 0.5) + 0.5).toFixed(2); 
         
         let nameHolder;
         if (claimType === 'Individual') {
@@ -110,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             nameHolder = `Gram Sabha - ${district} Village Cluster ${Math.floor(id / 5) + 1}`;
         }
         
-        const status = (Math.random() < 0.7) ? 'Approved' : 'Claimed/Pending'; // 70% chance of being approved for diversity
+        const status = (Math.random() < 0.7) ? 'Approved' : 'Claimed/Pending'; 
 
         return {
             "type": "Feature",
@@ -118,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 "id": id,
                 "State": state,
                 "District": district,
-                "Claim_Type": claimType, // Individual (Yellow) or Community (Orange)
+                "Claim_Type": claimType, 
                 "Status": status,
                 "Area_Hectares": `${areaHectares}`,
                 "Title_No": status === 'Approved' ? `TN-${id}` : 'N/A',
@@ -129,43 +133,32 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             "geometry": {
                 "type": "Polygon",
-                "coordinates": [vertices] // GeoJSON expects an array of rings
+                "coordinates": [vertices]
             }
         };
     }
 
-
-    // GeoJSON for the dummy claims (Coordinates are the center points)
     const fraClaimsGeoJSON = {
         "type": "FeatureCollection",
         "features": [
-            // Madhya Pradesh - Burhanpur (3 Polygons)
             createDummySquarePolygon(21.28, 76.30, 'Madhya Pradesh', 'Burhanpur', 101),
             createDummySquarePolygon(21.35, 76.30, 'Madhya Pradesh', 'Burhanpur', 102),
             createDummySquarePolygon(21.15, 76.45, 'Madhya Pradesh', 'Burhanpur', 103),
-
-            // Madhya Pradesh - Seoni (5 Polygons)
             createDummySquarePolygon(22.05, 79.20, 'Madhya Pradesh', 'Seoni', 201),
             createDummySquarePolygon(22.15, 79.50, 'Madhya Pradesh', 'Seoni', 202),
             createDummySquarePolygon(21.90, 79.70, 'Madhya Pradesh', 'Seoni', 203),
             createDummySquarePolygon(22.25, 79.35, 'Madhya Pradesh', 'Seoni', 204),
             createDummySquarePolygon(22.00, 79.85, 'Madhya Pradesh', 'Seoni', 205),
-
-            // Telangana - Adilabad (4 Polygons)
             createDummySquarePolygon(19.40, 78.40, 'Telangana', 'Adilabad', 301),
             createDummySquarePolygon(19.70, 78.65, 'Telangana', 'Adilabad', 302),
             createDummySquarePolygon(19.55, 78.90, 'Telangana', 'Adilabad', 303),
             createDummySquarePolygon(19.85, 78.75, 'Telangana', 'Adilabad', 304),
-
-            // Tripura - North Tripura (6 Polygons)
             createDummySquarePolygon(24.30, 91.80, 'Tripura', 'North Tripura', 401),
             createDummySquarePolygon(24.45, 92.10, 'Tripura', 'North Tripura', 402),
             createDummySquarePolygon(24.20, 92.25, 'Tripura', 'North Tripura', 403),
             createDummySquarePolygon(24.50, 91.95, 'Tripura', 'North Tripura', 404),
             createDummySquarePolygon(24.35, 92.30, 'Tripura', 'North Tripura', 405),
             createDummySquarePolygon(24.55, 92.15, 'Tripura', 'North Tripura', 406),
-
-            // Odisha - Bhadrak (7 Polygons)
             createDummySquarePolygon(21.10, 86.60, 'Odisha', 'Bhadrak', 501),
             createDummySquarePolygon(20.95, 86.85, 'Odisha', 'Bhadrak', 502),
             createDummySquarePolygon(21.25, 87.00, 'Odisha', 'Bhadrak', 503),
@@ -187,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const boundariesRadio = document.getElementById('boundaries-radio'); 
     const statsSidebar = document.getElementById('stats-sidebar');
     const sidebarToggleButton = document.getElementById('sidebar-toggle-button'); 
-    // NEW DOM ELEMENT
     const forestCoverRadio = document.getElementById('forest-cover-radio');
 
 
@@ -197,9 +189,8 @@ document.addEventListener('DOMContentLoaded', () => {
      * Calculates the dynamic top padding for Leaflet's fitBounds function.
      */
     function getFitBoundsPadding() {
-        // topBar.offsetHeight returns the current rendered height of the element (38px or ~190px)
         const sidebarWidth = statsSidebar.classList.contains('hidden') ? 0 : 260;
-        return [topBar.offsetHeight + 10, sidebarWidth]; // [Y offset, X offset]
+        return [topBar.offsetHeight + 10, sidebarWidth]; 
     }
     
 
@@ -216,13 +207,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 fraClaimsLayer = null;
             }
         }
-        // NEW: Clear Forest Cover Layer
-        if (layerName === 'forest-cover' || layerName === 'all') {
-            if (forestCoverLayer) {
-                map.removeLayer(forestCoverLayer);
-                forestCoverLayer = null;
-            }
-        }
+        
+        // Always remove both custom base layers before adding the correct one
+        if (map.hasLayer(openStreetMapLayer)) map.removeLayer(openStreetMapLayer);
+        if (map.hasLayer(esriWorldImageryLayer)) map.removeLayer(esriWorldImageryLayer);
+        
+        // Remove the CSS filter class from the map container (leaflet-map-pane)
+        document.querySelector('.leaflet-map-pane').classList.remove('forest-simulated-layer');
     }
 
     function updateStatus(message, isError = false) {
@@ -258,14 +249,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderStatistics(stateKey) {
         if (!stateKey) {
             statisticsPanel.innerHTML = '<p>Select a state to view statistics.</p>';
-            // Hide the sidebar if no state is selected, regardless of top bar state
             toggleStatsSidebar(false); 
             return;
         }
 
         const stats = stateData[stateKey].stats;
-
-        // Function to format the three-part stats (Individual, Community, Total)
         const formatThreePartStat = (title, data, unit = '') => `
             <strong>${title}</strong>
             <ul>
@@ -291,7 +279,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderFraClaims(stateKey, districtName) {
-        clearLayer('fra-claims'); 
+        clearLayer('all'); // Clear everything, including the base layer
+        openStreetMapLayer.addTo(map); // Add default base layer
 
         if (!stateKey) return;
 
@@ -358,9 +347,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderBoundaries(stateKey, districtName) {
-        clearLayer('fra-claims'); 
-        clearLayer('forest-cover'); // Ensure forest layer is cleared
-        clearLayer('current'); 
+        clearLayer('all'); // Clear everything, including the base layer
+        openStreetMapLayer.addTo(map); // Add default base layer
 
         if (!stateKey) return;
 
@@ -381,10 +369,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return r.json();
             })
             .then(data => {
-                let targetBounds = null; // Will hold the bounds of the state OR selected district
+                let targetBounds = null; 
 
                 if (districtName) {
-                    // Pre-calculate bounds for the *selected* district first
                     const selectedFeature = data.features.find(f => 
                         f.properties && f.properties.district === districtName
                     );
@@ -412,7 +399,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 currentLayer = L.geoJSON(data, { style: styleFeature }).addTo(map);
 
-                // Use the pre-calculated bounds or the bounds of the entire layer
                 const bounds = targetBounds || currentLayer.getBounds();
                 
                 map.fitBounds(bounds, {
@@ -428,34 +414,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * NEW: Adds the Bhuvan WMS Forest Cover layer.
+     * Renders the Simulated Forest Cover layer.
      */
     function renderForestCover() {
-        clearLayer('fra-claims'); 
-        clearLayer('current'); // Clear boundaries if they exist
+        clearLayer('all'); 
         
-        // If the layer is already loaded (just hidden/cleared), reuse it.
-        if (!forestCoverLayer) {
-            forestCoverLayer = L.tileLayer.wms('https://bhuvan-ras2.nrsc.gov.in/geoserver/wms', {
-                layers: 'ForestCover2021', // Layer name from Bhuvan NRSC
-                format: 'image/png',
-                transparent: true,
-                attribution: 'Source: <a href="https://bhuvan.nrsc.gov.in/">Bhuvan NRSC</a>'
-            });
+        // Add Satellite Imagery Base Layer
+        esriWorldImageryLayer.addTo(map);
+        
+        // Apply CSS filter to the entire map pane to simulate thematic data
+        // We find the map pane (which holds all tile layers) and add the class.
+        const mapPane = document.querySelector('.leaflet-map-pane');
+        if (mapPane) {
+            mapPane.classList.add('forest-simulated-layer');
         }
 
-        forestCoverLayer.addTo(map);
-        updateStatus("Displaying Forest Cover 2021 from Bhuvan NRSC.", false);
-        
-        // Since WMS is global, we keep the map view centred on India/current location.
+        updateStatus("Displaying Simulated Forest Cover over Satellite Imagery.", false);
     }
 
 
     // --- State and District Logic ---
 
     function handleStateSelection(stateKey) {
-        // Clear all dynamic layers
         clearLayer('all');
+        districtDropdown.innerHTML = '<option value="" disabled selected>-- Select a District --</option>';
         districtDropdown.value = "";
         districtDropdown.disabled = true;
 
@@ -489,18 +471,21 @@ document.addEventListener('DOMContentLoaded', () => {
         renderStatistics(stateKey); 
 
         if (!districtName) {
-            // This happens when the user manually selects the "-- Select a District --" option
             handleStateSelection(stateKey);
             return;
         }
         
-        // When district is selected, render the active layer filtered by district (or just boundaries if active)
+        // When district is selected, ensure the map displays the active layer type
         if (boundariesRadio.checked) {
             renderBoundaries(stateKey, districtName);
         } else if (fraClaimsRadio.checked) {
             renderFraClaims(stateKey, districtName);
+        } else if (forestCoverRadio.checked) {
+            // Forest cover layer is global, so just ensure it's still rendered and clear local layers.
+            clearLayer('fra-claims');
+            clearLayer('current');
+            renderForestCover();
         }
-        // Forest cover doesn't change by district, so we don't need an explicit call unless checked.
 
         // Rule: When a district is selected, hide the sidebar.
         toggleStatsSidebar(false); 
@@ -523,8 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isCollapsed = topBar.classList.toggle('collapsed');
         collapseButton.setAttribute('aria-expanded', !isCollapsed);
         
-        // 1. If the top bar collapses, try to show the sidebar (toggleStatsSidebar handles the state/district checks).
-        // If the top bar expands, hide the sidebar.
+        // 1. If the top bar collapses, try to show the sidebar.
         toggleStatsSidebar(isCollapsed);
 
         // 2. Invalidate map size and re-fit after the transition
@@ -571,18 +555,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const districtName = districtDropdown.value;
             const layerType = radio.value;
 
-            // Always clear all dynamic layers before rendering the selected one
+            // Always clear all dynamic layers (GeoJSON and WMS) before rendering the selected one
             clearLayer('all'); 
 
-            if (!stateKey && layerType !== 'forest-cover') {
-                updateStatus('Select a state to view boundaries or claims.');
-                return;
-            }
-
             if (layerType === 'boundaries') {
+                if (!stateKey) {
+                    updateStatus('Select a state to view boundaries.');
+                    return;
+                }
                 renderBoundaries(stateKey, districtName || null);
+
             } else if (layerType === 'fra-claims') {
+                 if (!stateKey) {
+                    updateStatus('Select a state to view FRA claims.');
+                    return;
+                }
                 renderFraClaims(stateKey, districtName || null);
+
             } else if (layerType === 'forest-cover') {
                 renderForestCover();
             }
