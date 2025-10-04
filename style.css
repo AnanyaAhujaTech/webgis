@@ -84,49 +84,6 @@ html, body {
     margin-bottom: 5px; /* Reduced vertical spacing */
 }
 
-/* --- Statistics Sidebar Styling --- */
-#stats-sidebar {
-    /* ... existing styles ... */
-    position: fixed;
-    /* ... existing styles ... */
-}
-
-#stats-sidebar.hidden {
-    transform: translateX(100%); /* Slide out */
-}
-
-/* NEW: Sidebar Toggle Button Styling */
-#sidebar-toggle-button {
-    position: absolute;
-    top: 50%;
-    left: -20px; /* Position it outside the sidebar */
-    transform: translateY(-50%);
-    width: 20px;
-    height: 40px;
-    background-color: #228b22; /* Forest Green, matches top bar */
-    color: #fff;
-    border: none;
-    border-radius: 4px 0 0 4px; /* Rounded left side */
-    box-shadow: -2px 0 8px rgba(0,0,0,0.3);
-    cursor: pointer;
-    z-index: 1000; 
-    padding: 0; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#stats-sidebar.hidden #sidebar-toggle-button i {
-    /* Arrow points right when closed */
-    transform: rotate(180deg);
-    transition: transform 0.3s ease;
-}
-#stats-sidebar:not(.hidden) #sidebar-toggle-button i {
-     /* Arrow points left when open */
-    transform: rotate(0deg); 
-    transition: transform 0.3s ease;
-}
-
 .radio-group {
     display: flex;
     align-items: center;
@@ -217,6 +174,38 @@ label {
 
 #stats-sidebar.hidden {
     transform: translateX(100%); /* Slide out */
+}
+
+/* NEW: Sidebar Toggle Button Styling */
+#sidebar-toggle-button {
+    position: absolute;
+    top: 50%;
+    left: -20px; /* Position it outside the sidebar */
+    transform: translateY(-50%);
+    width: 20px;
+    height: 40px;
+    background-color: #228b22; /* Forest Green, matches top bar */
+    color: #fff;
+    border: none;
+    border-radius: 4px 0 0 4px; /* Rounded left side */
+    box-shadow: -2px 0 8px rgba(0,0,0,0.3);
+    cursor: pointer;
+    z-index: 1000; 
+    padding: 0; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#stats-sidebar.hidden #sidebar-toggle-button i {
+    /* Arrow points right when closed */
+    transform: rotate(180deg);
+    transition: transform 0.3s ease;
+}
+#stats-sidebar:not(.hidden) #sidebar-toggle-button i {
+     /* Arrow points left when open */
+    transform: rotate(0deg); 
+    transition: transform 0.3s ease;
 }
 
 #stats-sidebar h2 {
