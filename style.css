@@ -176,7 +176,7 @@ label {
     transform: translateX(100%); /* Slide out */
 }
 
-/* Sidebar Toggle Button Styling */
+/* NEW: Sidebar Toggle Button Styling */
 #sidebar-toggle-button {
     position: absolute;
     top: 50%;
