@@ -68,38 +68,39 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /**
-     * @NEW_FUNCTION: Generates a single GeoJSON polygon feature with an irregular shape
-     * around the given latitude and longitude to simulate realistic land boundaries.
+     * @NEW_IRREGULAR_POLYGON_LOGIC
+     * Generates a single GeoJSON polygon feature with an irregular shape by
+     * calculating random offsets for each corner vertex.
      */
     function createDummyPolygon(lat, lon, state, district, id) {
         const centerLat = lat;
         const centerLon = lon;
         
-        // Base size/radius for the claim area (in degrees, approx 1km wide)
-        const baseRadius = 0.01; // Increased size to make irregularity easier to spot
+        // Base size for the claim area (in degrees)
+        const baseSize = 0.007; 
         
-        // Random number of vertices (5 to 8 for irregular shapes like pentagon, hexagon, etc.)
-        const numVertices = Math.floor(Math.random() * 4) + 5; 
-
+        // Random number of vertices (6 to 9)
+        const numVertices = Math.floor(Math.random() * 4) + 6; 
+        
+        // Array to store the [lon, lat] pairs
         let vertices = [];
-
+        
+        // We'll calculate 4 base corners and then randomly offset them
         for (let i = 0; i < numVertices; i++) {
-            // Calculate the base angle for evenly spaced vertices
-            const baseAngle = (i / numVertices) * 2 * Math.PI;
+            // Determine the angle for the vertex (0 to 2*PI radians)
+            const angle = (i / numVertices) * 2 * Math.PI;
+            
+            // Introduce size variation (0.7 to 1.3 times baseSize)
+            const distanceFactor = (Math.random() * 0.6) + 0.7; 
+            const finalRadius = distanceFactor * baseSize;
 
-            // --- INCREASED RANDOMIZATION FOR IRREGULARITY ---
-
-            // Distance randomness: factor between 0.6 and 1.2 * baseRadius
-            const distanceFactor = (Math.random() * 0.6) + 0.6; 
-            const finalDistance = distanceFactor * baseRadius;
-
-            // Angle randomness: up to +/- 30 degrees (0.523 radians)
-            const angleOffset = (Math.random() * 1.047) - 0.523; 
-            const finalAngle = baseAngle + angleOffset;
-
-            // Calculate offset
-            const deltaLon = finalDistance * Math.cos(finalAngle);
-            const deltaLat = finalDistance * Math.sin(finalAngle);
+            // Apply random jitter to the angle (up to +/- 20 degrees, 0.35 rad)
+            const angleJitter = (Math.random() * 0.7) - 0.35;
+            const finalAngle = angle + angleJitter;
+            
+            // Convert polar back to cartesian offsets
+            const deltaLon = finalRadius * Math.cos(finalAngle);
+            const deltaLat = finalRadius * Math.sin(finalAngle);
             
             const newLon = centerLon + deltaLon;
             const newLat = centerLat + deltaLat;
@@ -107,11 +108,12 @@ document.addEventListener('DOMContentLoaded', () => {
             vertices.push([newLon, newLat]);
         }
 
-        // Sort vertices by angle around a calculated centroid to prevent self-intersection
+        // --- SORT VERTICES TO PREVENT SELF-INTERSECTION (CRITICAL FOR IRREGULARITY) ---
         const avgLon = vertices.reduce((sum, v) => sum + v[0], 0) / vertices.length;
         const avgLat = vertices.reduce((sum, v) => sum + v[1], 0) / vertices.length;
 
         vertices.sort((a, b) => {
+            // Calculate angle relative to the center
             const angleA = Math.atan2(a[1] - avgLat, a[0] - avgLon);
             const angleB = Math.atan2(b[1] - avgLat, b[0] - avgLon);
             return angleA - angleB;
@@ -320,6 +322,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }).addTo(map);
 
         updateStatus(`Displaying ${filteredClaims.length} FRA claim polygons for ${districtName || stateName}.`, false);
+        
+        // **NEW: Zoom specifically to the claim layer bounds when rendered**
+        if (fraClaimsLayer && districtName) {
+             map.fitBounds(fraClaimsLayer.getBounds(), {
+                paddingTopLeft: getFitBoundsPadding(),
+                maxZoom: 14 // Zoom closer to see the irregular shape clearly
+            });
+        }
     }
 
     // --- State and District Logic ---
@@ -372,7 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Conditionally render FRA claims based on radio button
                 if (fraClaimsRadio.checked) {
-                    renderFraClaims(stateKey);
+                    // Render claims but don't force a zoom yet (zoom happens on district select)
+                    renderFraClaims(stateKey); 
                 }
 
                 updateStatus(`State layer for ${config.name} loaded. Select a district or view FRA claims.`);
@@ -444,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Conditionally render FRA claims based on radio button, filtered by district
                 if (fraClaimsRadio.checked) {
-                    renderFraClaims(stateKey, districtName);
+                    renderFraClaims(stateKey, districtName); // This now includes a zoom
                 }
 
                 updateStatus(`District layer for ${districtName} loaded.`);
@@ -475,8 +486,9 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             map.invalidateSize();
             // Re-fit the map view to account for the new header height
-            if (currentLayer) {
-                 map.fitBounds(currentLayer.getBounds(), {
+            const layerToFit = fraClaimsLayer || currentLayer;
+            if (layerToFit) {
+                 map.fitBounds(layerToFit.getBounds(), {
                     paddingTopLeft: getFitBoundsPadding(),
                     animate: true 
                 });
