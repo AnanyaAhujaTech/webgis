@@ -44,7 +44,9 @@ html, body {
 
 #collapse-button {
     position: absolute;
-    right: 0;
+    /* FIX: Set right to 60px to align the button relative to the padding, 
+       making the center of the title appear visually correct. */
+    right: 60px; 
     top: 50%;
     transform: translateY(-50%);
     background: none;
