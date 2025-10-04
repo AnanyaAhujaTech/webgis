@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const centerLon = lon;
         
         // Base size/radius for the claim area (in degrees, approx 1km wide)
-        const baseRadius = 0.005; 
+        const baseRadius = 0.01; // Increased size to make irregularity easier to spot
         
         // Random number of vertices (5 to 8 for irregular shapes like pentagon, hexagon, etc.)
         const numVertices = Math.floor(Math.random() * 4) + 5; 
@@ -87,18 +87,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // Calculate the base angle for evenly spaced vertices
             const baseAngle = (i / numVertices) * 2 * Math.PI;
 
-            // Introduce randomness to the angle and distance for irregularity
-            // Angle randomness: up to +/- 10 degrees (0.1745 radians)
-            const angleOffset = (Math.random() * 0.349) - 0.1745; 
-            
-            // Distance randomness: up to +/- 50% of baseRadius, ensuring a minimum size
-            const distanceFactor = (Math.random() * 0.5) + 0.5; // Factor between 0.5 and 1.0
+            // --- INCREASED RANDOMIZATION FOR IRREGULARITY ---
+
+            // Distance randomness: factor between 0.6 and 1.2 * baseRadius
+            const distanceFactor = (Math.random() * 0.6) + 0.6; 
             const finalDistance = distanceFactor * baseRadius;
 
+            // Angle randomness: up to +/- 30 degrees (0.523 radians)
+            const angleOffset = (Math.random() * 1.047) - 0.523; 
             const finalAngle = baseAngle + angleOffset;
 
-            // Calculate offset (rough approximation, as earth curvature is ignored for small distances)
-            // Convert polar coordinates (distance, angle) to Cartesian (deltaLon, deltaLat)
+            // Calculate offset
             const deltaLon = finalDistance * Math.cos(finalAngle);
             const deltaLat = finalDistance * Math.sin(finalAngle);
             
