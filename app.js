@@ -82,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Generates a square GeoJSON polygon feature centered at [lat, lon].
-     * Polygons are randomly assigned as Individual (Yellow) or Community (Orange).
      */
     function createDummySquarePolygon(lat, lon, state, district, id) {
         // Base size for the claim area (in degrees, slightly smaller than old)
@@ -186,6 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const fraClaimsRadio = document.getElementById('fra-claims-radio');
     const boundariesRadio = document.getElementById('boundaries-radio'); 
     const statsSidebar = document.getElementById('stats-sidebar');
+    // NEW DOM ELEMENT
+    const sidebarToggleButton = document.getElementById('sidebar-toggle-button'); 
 
     // --- Core Functions ---
 
@@ -198,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return [topBar.offsetHeight + 10, sidebarWidth]; // [Y offset, X offset]
     }
     
-    // NOTE: autoCollapseTopBar function removed as requested.
 
     function clearLayer(layerName = 'all') {
         if (layerName === 'current' || layerName === 'all') {
@@ -223,20 +223,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Toggles the visibility of the statistics sidebar and invalidates the map size.
-     * * IMPORTANT: This function now respects the rule: 
-     * Sidebar must be hidden if a district is selected (districtDropdown.value is set).
-     * * @param {boolean} show - True to show the sidebar, false to hide.
+     * * FINAL RULE IMPLEMENTATION: Sidebar must be hidden if a district is selected (districtDropdown.value is set).
+     * * @param {boolean} show - The desired state of the sidebar (true to show, false to hide).
      */
     function toggleStatsSidebar(show) {
-        // Check if a state is selected AND if no district is selected
         const stateSelected = stateDropdown.value !== "";
         const districtSelected = districtDropdown.value !== "";
         
-        // The sidebar is shown only if 'show' is true AND a state is selected AND NO district is selected.
+        // Final Rule: Only show if 'show' is true AND a state is selected AND NO district is selected.
         const showSidebar = show && stateSelected && !districtSelected; 
 
         document.body.classList.toggle('stats-open', showSidebar);
         statsSidebar.classList.toggle('hidden', !showSidebar);
+
+        if (sidebarToggleButton) {
+            sidebarToggleButton.setAttribute('aria-expanded', showSidebar);
+        }
+        
         setTimeout(() => map.invalidateSize(), 300);
     }
 
@@ -442,15 +445,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render the default layer (boundaries)
         renderBoundaries(stateKey, null); 
         
-        // Update sidebar visibility state (will show if top-bar is collapsed)
-        // We call this here to ensure the state has the latest info.
-        toggleStatsSidebar(!topBar.classList.contains('collapsed'));
+        // Set sidebar state: If top bar is collapsed, the sidebar should open now (State-only view).
+        const topBarCollapsed = topBar.classList.contains('collapsed');
+        toggleStatsSidebar(topBarCollapsed);
     }
 
     function handleDistrictSelection(stateKey, districtName) {
         renderStatistics(stateKey); 
 
         if (!districtName) {
+            // This happens when the user manually selects the "-- Select a District --" option
             handleStateSelection(stateKey);
             return;
         }
@@ -461,7 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderFraClaims(stateKey, districtName);
         }
 
-        // Hide sidebar immediately when a district is selected, regardless of top-bar state
+        // Rule: When a district is selected, hide the sidebar.
         toggleStatsSidebar(false); 
     }
 
@@ -477,13 +481,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Event Listeners ---
 
-    // Top Bar Collapse Toggle (Now also controls the Statistics Sidebar)
+    // Top Bar Collapse Toggle (Controls control panel and sidebar visibility based on rules)
     collapseButton.addEventListener('click', () => {
         const isCollapsed = topBar.classList.toggle('collapsed');
         collapseButton.setAttribute('aria-expanded', !isCollapsed);
         
-        // 1. Toggle Sidebar Visibility based on collapse state AND selection rules.
-        // The sidebar is shown if the top bar is manually collapsed.
+        // 1. If the top bar collapses, try to show the sidebar (toggleStatsSidebar handles the state/district checks).
+        // If the top bar expands, hide the sidebar.
         toggleStatsSidebar(isCollapsed);
 
         // 2. Invalidate map size and re-fit after the transition
@@ -497,6 +501,13 @@ document.addEventListener('DOMContentLoaded', () => {
                  });
             }
         }, 300); 
+    });
+
+    // NEW: Sidebar Manual Toggle Button
+    sidebarToggleButton.addEventListener('click', () => {
+        // We invert the current visibility status. The function then checks if the rules allow the new state.
+        const isCurrentlyHidden = statsSidebar.classList.contains('hidden');
+        toggleStatsSidebar(isCurrentlyHidden); 
     });
 
     // State Dropdown Change
