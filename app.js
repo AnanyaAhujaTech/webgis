@@ -3,16 +3,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const map = L.map('map').setView([22.5937, 78.9629], 5);
 
-    // Initial Base Layer (OpenStreetMap standard tiles)
-    const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
-        maxZoom: 19
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
     }).addTo(map);
 
     let currentLayer = null; // State or District GeoJSON layer (Boundaries)
     let fraClaimsLayer = null; // Layer for the small polygons (FRA Claims)
     
-    // --- Configuration & Data (remains the same) ---
+    // --- Configuration & Data ---
     const stateData = {
         'madhya-pradesh': {
             name: 'Madhya Pradesh', color: '#1f78b4', fillColor: '#a6cee3',
@@ -68,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Custom name list for popups (remains the same)
+    // Custom name list for popups
     const holderNames = [
         "Sunder Das Ahuja", "Harvardhan Kumar", "Rajesh Gupta", "Arth Goyal", "Dinesh Ghai", 
         "Tripti Rao", "Ramesh Shankar", "Manoj Roy", "Ridhi Kumari", "Radha Rani", 
@@ -76,21 +75,32 @@ document.addEventListener('DOMContentLoaded', () => {
         "Nitin Jhangra", "Pankaj Choudhari", "Pooja Tripathi", "Preet Bajpayee"
     ];
 
+    /**
+     * Helper function to get a random item from an array.
+     */
     const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
+    /**
+     * Generates a square GeoJSON polygon feature centered at [lat, lon].
+     */
     function createDummySquarePolygon(lat, lon, state, district, id) {
+        // Base size for the claim area (in degrees, slightly smaller than old)
         const size = 0.005; 
         const halfSize = size / 2;
         
         const vertices = [
-            [lon - halfSize, lat - halfSize], [lon + halfSize, lat - halfSize], 
-            [lon + halfSize, lat + halfSize], [lon - halfSize, lat + halfSize], 
-            [lon - halfSize, lat - halfSize] 
+            [lon - halfSize, lat - halfSize], // SW
+            [lon + halfSize, lat - halfSize], // SE
+            [lon + halfSize, lat + halfSize], // NE
+            [lon - halfSize, lat + halfSize], // NW
+            [lon - halfSize, lat - halfSize]  // Close the loop
         ];
         
-        const isIndividual = Math.random() < 0.6; 
+        // Use a random value to determine if it's Individual or Community
+        const isIndividual = Math.random() < 0.6; // 60% chance of being individual
         const claimType = isIndividual ? 'Individual' : 'Community';
-        const areaHectares = (Math.random() * (10.0 - 0.5) + 0.5).toFixed(2); 
+        
+        const areaHectares = (Math.random() * (10.0 - 0.5) + 0.5).toFixed(2); // 0.5 to 10.0 hectares
         
         let nameHolder;
         if (claimType === 'Individual') {
@@ -99,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             nameHolder = `Gram Sabha - ${district} Village Cluster ${Math.floor(id / 5) + 1}`;
         }
         
-        const status = (Math.random() < 0.7) ? 'Approved' : 'Claimed/Pending'; 
+        const status = (Math.random() < 0.7) ? 'Approved' : 'Claimed/Pending'; // 70% chance of being approved for diversity
 
         return {
             "type": "Feature",
@@ -107,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 "id": id,
                 "State": state,
                 "District": district,
-                "Claim_Type": claimType, 
+                "Claim_Type": claimType, // Individual (Yellow) or Community (Orange)
                 "Status": status,
                 "Area_Hectares": `${areaHectares}`,
                 "Title_No": status === 'Approved' ? `TN-${id}` : 'N/A',
@@ -118,32 +128,43 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             "geometry": {
                 "type": "Polygon",
-                "coordinates": [vertices]
+                "coordinates": [vertices] // GeoJSON expects an array of rings
             }
         };
     }
 
+
+    // GeoJSON for the dummy claims (Coordinates are the center points)
     const fraClaimsGeoJSON = {
         "type": "FeatureCollection",
         "features": [
+            // Madhya Pradesh - Burhanpur (3 Polygons)
             createDummySquarePolygon(21.28, 76.30, 'Madhya Pradesh', 'Burhanpur', 101),
             createDummySquarePolygon(21.35, 76.30, 'Madhya Pradesh', 'Burhanpur', 102),
             createDummySquarePolygon(21.15, 76.45, 'Madhya Pradesh', 'Burhanpur', 103),
+
+            // Madhya Pradesh - Seoni (5 Polygons)
             createDummySquarePolygon(22.05, 79.20, 'Madhya Pradesh', 'Seoni', 201),
             createDummySquarePolygon(22.15, 79.50, 'Madhya Pradesh', 'Seoni', 202),
             createDummySquarePolygon(21.90, 79.70, 'Madhya Pradesh', 'Seoni', 203),
             createDummySquarePolygon(22.25, 79.35, 'Madhya Pradesh', 'Seoni', 204),
             createDummySquarePolygon(22.00, 79.85, 'Madhya Pradesh', 'Seoni', 205),
+
+            // Telangana - Adilabad (4 Polygons)
             createDummySquarePolygon(19.40, 78.40, 'Telangana', 'Adilabad', 301),
             createDummySquarePolygon(19.70, 78.65, 'Telangana', 'Adilabad', 302),
             createDummySquarePolygon(19.55, 78.90, 'Telangana', 'Adilabad', 303),
             createDummySquarePolygon(19.85, 78.75, 'Telangana', 'Adilabad', 304),
+
+            // Tripura - North Tripura (6 Polygons)
             createDummySquarePolygon(24.30, 91.80, 'Tripura', 'North Tripura', 401),
             createDummySquarePolygon(24.45, 92.10, 'Tripura', 'North Tripura', 402),
             createDummySquarePolygon(24.20, 92.25, 'Tripura', 'North Tripura', 403),
             createDummySquarePolygon(24.50, 91.95, 'Tripura', 'North Tripura', 404),
             createDummySquarePolygon(24.35, 92.30, 'Tripura', 'North Tripura', 405),
             createDummySquarePolygon(24.55, 92.15, 'Tripura', 'North Tripura', 406),
+
+            // Odisha - Bhadrak (7 Polygons)
             createDummySquarePolygon(21.10, 86.60, 'Odisha', 'Bhadrak', 501),
             createDummySquarePolygon(20.95, 86.85, 'Odisha', 'Bhadrak', 502),
             createDummySquarePolygon(21.25, 87.00, 'Odisha', 'Bhadrak', 503),
@@ -165,8 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const boundariesRadio = document.getElementById('boundaries-radio'); 
     const statsSidebar = document.getElementById('stats-sidebar');
     const sidebarToggleButton = document.getElementById('sidebar-toggle-button'); 
-    const forestCoverRadio = document.getElementById('forest-cover-radio');
-
 
     // --- Core Functions ---
 
@@ -174,8 +193,9 @@ document.addEventListener('DOMContentLoaded', () => {
      * Calculates the dynamic top padding for Leaflet's fitBounds function.
      */
     function getFitBoundsPadding() {
+        // topBar.offsetHeight returns the current rendered height of the element (38px or ~190px)
         const sidebarWidth = statsSidebar.classList.contains('hidden') ? 0 : 260;
-        return [topBar.offsetHeight + 10, sidebarWidth]; 
+        return [topBar.offsetHeight + 10, sidebarWidth]; // [Y offset, X offset]
     }
     
 
@@ -227,11 +247,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderStatistics(stateKey) {
         if (!stateKey) {
             statisticsPanel.innerHTML = '<p>Select a state to view statistics.</p>';
+            // Hide the sidebar if no state is selected, regardless of top bar state
             toggleStatsSidebar(false); 
             return;
         }
 
         const stats = stateData[stateKey].stats;
+
+        // Function to format the three-part stats (Individual, Community, Total)
         const formatThreePartStat = (title, data, unit = '') => `
             <strong>${title}</strong>
             <ul>
@@ -257,8 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderFraClaims(stateKey, districtName) {
-        clearLayer('all'); 
-        openStreetMapLayer.addTo(map); // Add default base layer
+        clearLayer('fra-claims'); 
 
         if (!stateKey) return;
 
@@ -290,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     1. Claim ID: ${props.id}<br>
                     2. Claim/Title Type: <strong>${props.Claim_Type}</strong><br>
                     3. Status: ${props.Status}<br>
-                    4. Name(s) of Holder(s)**: ${props.Name_Holders || 'N/A'}<br>
+                    4. Name(s) of Holder(s): ${props.Name_Holders || 'N/A'}<br>
                     5. Area (Hectares): ${props.Area_Hectares}<br>
                     6. Title No.: ${props.Title_No}<br>
                     7. Village/Gram Sabha: ${props.Village || 'N/A'}<br>
@@ -325,8 +347,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderBoundaries(stateKey, districtName) {
-        clearLayer('all'); 
-        openStreetMapLayer.addTo(map); // Add default base layer
+        clearLayer('fra-claims'); 
+        clearLayer('current'); 
 
         if (!stateKey) return;
 
@@ -347,9 +369,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return r.json();
             })
             .then(data => {
-                let targetBounds = null; 
+                let targetBounds = null; // Will hold the bounds of the state OR selected district
 
                 if (districtName) {
+                    // FIX: Pre-calculate bounds for the *selected* district first (Fix for zoom glitch)
                     const selectedFeature = data.features.find(f => 
                         f.properties && f.properties.district === districtName
                     );
@@ -368,8 +391,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         : true; 
                     
                     return {
-                        color: isSelected ? config.color : '#444',
+                        // Ensure colors are applied correctly for both cases
+                        color: isSelected ? config.color : '#444', 
                         fillColor: isSelected ? config.fillColor : '#888',
+                        // Ensure the selected district is prominently highlighted
                         fillOpacity: isSelected && districtName ? 0.6 : 0.3,
                         weight: isSelected && districtName ? 3 : 1
                     };
@@ -377,6 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 currentLayer = L.geoJSON(data, { style: styleFeature }).addTo(map);
 
+                // Use the pre-calculated bounds or the bounds of the entire layer
                 const bounds = targetBounds || currentLayer.getBounds();
                 
                 map.fitBounds(bounds, {
@@ -391,94 +417,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    /**
-     * FINAL FIX: Renders the Simulated Forest Cover layer by applying a translucent 
-     * green fill over the selected state/district boundary.
-     */
-    function renderForestCover() {
-        clearLayer('all'); 
-        openStreetMapLayer.addTo(map); // Keep OSM base layer for context
-
-        const stateKey = stateDropdown.value;
-        const districtName = districtDropdown.value;
-        
-        if (!stateKey) {
-            updateStatus('Select a state to view forest cover simulation.');
-            return;
-        }
-
-        const config = stateData[stateKey];
-        let fileToLoad = `${stateKey}.geojson`;
-        let statusMessage = `Simulating Forest Cover for ${config.name} (Thematic Overlay).`;
-
-        if (districtName) {
-            fileToLoad = `${stateKey}Dist.geojson`;
-            statusMessage = `Simulating Forest Cover for ${districtName} (Thematic Overlay).`;
-        }
-
-        updateStatus(`Loading boundary data for forest simulation: ${fileToLoad}...`);
-
-        fetch(fileToLoad)
-            .then(r => {
-                if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                return r.json();
-            })
-            .then(data => {
-                let targetFeature = null;
-
-                // Find the specific feature if a district is selected
-                if (districtName) {
-                     targetFeature = data.features.find(f => 
-                        f.properties && f.properties.district === districtName
-                    );
-                }
-                
-                // If a district is selected, use only that feature. Otherwise, use all features (state view).
-                const geoJsonData = targetFeature ? {
-                    "type": "FeatureCollection",
-                    "features": [targetFeature]
-                } : data;
-
-                // Style: Lighter semi-transparent green fill to act as a thematic layer
-                const styleFeature = (feature) => {
-                    const isTarget = !districtName || (feature.properties && feature.properties.district === districtName);
-                    
-                    if (isTarget) {
-                        return {
-                            color: '#006400', // Dark green border
-                            fillColor: '#228B22', // Forest Green fill
-                            fillOpacity: 0.2, // MUCH LIGHTER opacity so the map underneath is clear
-                            weight: 1
-                        };
-                    }
-                    
-                    // Hide non-target features completely
-                    return { weight: 0, fillOpacity: 0 };
-                };
-
-                currentLayer = L.geoJSON(geoJsonData, { style: styleFeature }).addTo(map);
-                
-                const bounds = currentLayer.getBounds();
-                
-                map.fitBounds(bounds, {
-                    paddingTopLeft: getFitBoundsPadding()
-                });
-
-                updateStatus(statusMessage);
-            })
-            .catch(err => {
-                console.error(`Error loading boundary file for forest simulation:`, err);
-                updateStatus(`Could not load boundary file for forest simulation.`, true);
-            });
-    }
-
-
     // --- State and District Logic ---
 
     function handleStateSelection(stateKey) {
-        clearLayer('all');
+        clearLayer();
         districtDropdown.innerHTML = '<option value="" disabled selected>-- Select a District --</option>';
-        districtDropdown.value = "";
         districtDropdown.disabled = true;
 
         if (!stateKey) {
@@ -511,18 +454,15 @@ document.addEventListener('DOMContentLoaded', () => {
         renderStatistics(stateKey); 
 
         if (!districtName) {
+            // This happens when the user manually selects the "-- Select a District --" option
             handleStateSelection(stateKey);
             return;
         }
         
-        // Re-render the currently active layer type.
         if (boundariesRadio.checked) {
             renderBoundaries(stateKey, districtName);
         } else if (fraClaimsRadio.checked) {
             renderFraClaims(stateKey, districtName);
-        } else if (forestCoverRadio.checked) {
-            // Rerender the forest layer, now filtered by district
-            renderForestCover();
         }
 
         // Rule: When a district is selected, hide the sidebar.
@@ -546,7 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const isCollapsed = topBar.classList.toggle('collapsed');
         collapseButton.setAttribute('aria-expanded', !isCollapsed);
         
-        // 1. If the top bar collapses, try to show the sidebar.
+        // 1. If the top bar collapses, try to show the sidebar (toggleStatsSidebar handles the state/district checks).
+        // If the top bar expands, hide the sidebar.
         toggleStatsSidebar(isCollapsed);
 
         // 2. Invalidate map size and re-fit after the transition
@@ -562,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 300); 
     });
 
-    // Sidebar Manual Toggle Button
+    // NEW: Sidebar Manual Toggle Button
     sidebarToggleButton.addEventListener('click', () => {
         // We invert the current visibility status. The function then checks if the rules allow the new state.
         const isCurrentlyHidden = statsSidebar.classList.contains('hidden');
@@ -586,33 +527,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Layer Radio Button Change (Handles all three layers)
+    // Layer Radio Button Change
     document.querySelectorAll('input[name="layer-type"]').forEach(radio => {
         radio.addEventListener('change', () => {
             const stateKey = stateDropdown.value;
             const districtName = districtDropdown.value;
-            const layerType = radio.value;
 
-            // Clear all layers
-            clearLayer('all'); 
+            if (!stateKey) {
+                updateStatus('Select a state before changing the layer view.');
+                return;
+            }
 
-            if (layerType === 'boundaries') {
-                if (!stateKey) { updateStatus('Select a state to view boundaries.'); return; }
+            if (boundariesRadio.checked) {
                 renderBoundaries(stateKey, districtName || null);
-
-            } else if (layerType === 'fra-claims') {
-                 if (!stateKey) { updateStatus('Select a state to view FRA claims.'); return; }
+            } else if (fraClaimsRadio.checked) {
                 renderFraClaims(stateKey, districtName || null);
-
-            } else if (layerType === 'forest-cover') {
-                // Must have a state selected to show a thematic map of the area
-                 if (!stateKey) { 
-                    updateStatus('Select a state to simulate forest cover.'); 
-                    // Revert to boundaries radio button if no state is selected
-                    boundariesRadio.checked = true;
-                    return; 
-                }
-                renderForestCover();
             }
         });
     });
