@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentLayer = null; // State or District GeoJSON layer (Boundaries)
     let fraClaimsLayer = null; // Layer for the small polygons (FRA Claims)
+    let forestCoverLayer = null; // NEW: Bhuvan WMS Layer
     
     // --- Configuration & Data ---
     const stateData = {
@@ -186,6 +187,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const boundariesRadio = document.getElementById('boundaries-radio'); 
     const statsSidebar = document.getElementById('stats-sidebar');
     const sidebarToggleButton = document.getElementById('sidebar-toggle-button'); 
+    // NEW DOM ELEMENT
+    const forestCoverRadio = document.getElementById('forest-cover-radio');
+
 
     // --- Core Functions ---
 
@@ -210,6 +214,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (fraClaimsLayer) {
                 map.removeLayer(fraClaimsLayer);
                 fraClaimsLayer = null;
+            }
+        }
+        // NEW: Clear Forest Cover Layer
+        if (layerName === 'forest-cover' || layerName === 'all') {
+            if (forestCoverLayer) {
+                map.removeLayer(forestCoverLayer);
+                forestCoverLayer = null;
             }
         }
     }
@@ -348,6 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderBoundaries(stateKey, districtName) {
         clearLayer('fra-claims'); 
+        clearLayer('forest-cover'); // Ensure forest layer is cleared
         clearLayer('current'); 
 
         if (!stateKey) return;
@@ -372,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let targetBounds = null; // Will hold the bounds of the state OR selected district
 
                 if (districtName) {
-                    // FIX: Pre-calculate bounds for the *selected* district first (Fix for zoom glitch)
+                    // Pre-calculate bounds for the *selected* district first
                     const selectedFeature = data.features.find(f => 
                         f.properties && f.properties.district === districtName
                     );
@@ -391,10 +403,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         : true; 
                     
                     return {
-                        // Ensure colors are applied correctly for both cases
-                        color: isSelected ? config.color : '#444', 
+                        color: isSelected ? config.color : '#444',
                         fillColor: isSelected ? config.fillColor : '#888',
-                        // Ensure the selected district is prominently highlighted
                         fillOpacity: isSelected && districtName ? 0.6 : 0.3,
                         weight: isSelected && districtName ? 3 : 1
                     };
@@ -417,11 +427,36 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
+    /**
+     * NEW: Adds the Bhuvan WMS Forest Cover layer.
+     */
+    function renderForestCover() {
+        clearLayer('fra-claims'); 
+        clearLayer('current'); // Clear boundaries if they exist
+        
+        // If the layer is already loaded (just hidden/cleared), reuse it.
+        if (!forestCoverLayer) {
+            forestCoverLayer = L.tileLayer.wms('https://bhuvan-ras2.nrsc.gov.in/geoserver/wms', {
+                layers: 'ForestCover2021', // Layer name from Bhuvan NRSC
+                format: 'image/png',
+                transparent: true,
+                attribution: 'Source: <a href="https://bhuvan.nrsc.gov.in/">Bhuvan NRSC</a>'
+            });
+        }
+
+        forestCoverLayer.addTo(map);
+        updateStatus("Displaying Forest Cover 2021 from Bhuvan NRSC.", false);
+        
+        // Since WMS is global, we keep the map view centred on India/current location.
+    }
+
+
     // --- State and District Logic ---
 
     function handleStateSelection(stateKey) {
-        clearLayer();
-        districtDropdown.innerHTML = '<option value="" disabled selected>-- Select a District --</option>';
+        // Clear all dynamic layers
+        clearLayer('all');
+        districtDropdown.value = "";
         districtDropdown.disabled = true;
 
         if (!stateKey) {
@@ -459,11 +494,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        // When district is selected, render the active layer filtered by district (or just boundaries if active)
         if (boundariesRadio.checked) {
             renderBoundaries(stateKey, districtName);
         } else if (fraClaimsRadio.checked) {
             renderFraClaims(stateKey, districtName);
         }
+        // Forest cover doesn't change by district, so we don't need an explicit call unless checked.
 
         // Rule: When a district is selected, hide the sidebar.
         toggleStatsSidebar(false); 
@@ -503,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 300); 
     });
 
-    // NEW: Sidebar Manual Toggle Button
+    // Sidebar Manual Toggle Button
     sidebarToggleButton.addEventListener('click', () => {
         // We invert the current visibility status. The function then checks if the rules allow the new state.
         const isCurrentlyHidden = statsSidebar.classList.contains('hidden');
@@ -527,21 +564,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Layer Radio Button Change
+    // Layer Radio Button Change (Updated to handle 3 layers)
     document.querySelectorAll('input[name="layer-type"]').forEach(radio => {
         radio.addEventListener('change', () => {
             const stateKey = stateDropdown.value;
             const districtName = districtDropdown.value;
+            const layerType = radio.value;
 
-            if (!stateKey) {
-                updateStatus('Select a state before changing the layer view.');
+            // Always clear all dynamic layers before rendering the selected one
+            clearLayer('all'); 
+
+            if (!stateKey && layerType !== 'forest-cover') {
+                updateStatus('Select a state to view boundaries or claims.');
                 return;
             }
 
-            if (boundariesRadio.checked) {
+            if (layerType === 'boundaries') {
                 renderBoundaries(stateKey, districtName || null);
-            } else if (fraClaimsRadio.checked) {
+            } else if (layerType === 'fra-claims') {
                 renderFraClaims(stateKey, districtName || null);
+            } else if (layerType === 'forest-cover') {
+                renderForestCover();
             }
         });
     });
