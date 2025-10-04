@@ -392,8 +392,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * NEW: Renders the Simulated Forest Cover layer by applying a semi-transparent green 
-     * fill over the selected state/district boundary.
+     * FINAL FIX: Renders the Simulated Forest Cover layer by applying a translucent 
+     * green fill over the selected state/district boundary.
      */
     function renderForestCover() {
         clearLayer('all'); 
@@ -409,14 +409,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const config = stateData[stateKey];
         let fileToLoad = `${stateKey}.geojson`;
-        let statusMessage = `Simulating Forest Cover for ${config.name}.`;
+        let statusMessage = `Simulating Forest Cover for ${config.name} (Thematic Overlay).`;
 
         if (districtName) {
             fileToLoad = `${stateKey}Dist.geojson`;
-            statusMessage = `Simulating Forest Cover for ${districtName}.`;
+            statusMessage = `Simulating Forest Cover for ${districtName} (Thematic Overlay).`;
         }
 
-        updateStatus(`Loading boundary layer for forest simulation: ${fileToLoad}...`);
+        updateStatus(`Loading boundary data for forest simulation: ${fileToLoad}...`);
 
         fetch(fileToLoad)
             .then(r => {
@@ -424,7 +424,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return r.json();
             })
             .then(data => {
-                let targetBounds = null; 
                 let targetFeature = null;
 
                 // Find the specific feature if a district is selected
@@ -440,27 +439,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     "features": [targetFeature]
                 } : data;
 
-                // Style: Solid semi-transparent green fill over the area
+                // Style: Lighter semi-transparent green fill to act as a thematic layer
                 const styleFeature = (feature) => {
-                    // For district view, we highlight only the target feature. For state view, all features get the style.
                     const isTarget = !districtName || (feature.properties && feature.properties.district === districtName);
                     
                     if (isTarget) {
                         return {
                             color: '#006400', // Dark green border
                             fillColor: '#228B22', // Forest Green fill
-                            fillOpacity: 0.5, // Semi-transparent
-                            weight: 2
+                            fillOpacity: 0.2, // MUCH LIGHTER opacity so the map underneath is clear
+                            weight: 1
                         };
                     }
                     
-                    // Keep non-target districts hidden/dimmed if viewing multiple districts
+                    // Hide non-target features completely
                     return { weight: 0, fillOpacity: 0 };
                 };
 
                 currentLayer = L.geoJSON(geoJsonData, { style: styleFeature }).addTo(map);
                 
-                // Calculate bounds (either the single district or the whole state layer)
                 const bounds = currentLayer.getBounds();
                 
                 map.fitBounds(bounds, {
@@ -518,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // When district is selected, render the currently active layer type, filtered by district.
+        // Re-render the currently active layer type.
         if (boundariesRadio.checked) {
             renderBoundaries(stateKey, districtName);
         } else if (fraClaimsRadio.checked) {
@@ -555,7 +552,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. Invalidate map size and re-fit after the transition
         setTimeout(() => {
             map.invalidateSize();
-            // Try to fit the currently active layer, if any
             const layerToFit = fraClaimsLayer || currentLayer;
             if (layerToFit) {
                  map.fitBounds(layerToFit.getBounds(), {
@@ -597,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const districtName = districtDropdown.value;
             const layerType = radio.value;
 
-            // Clear all dynamic layers before rendering the selected one
+            // Clear all layers
             clearLayer('all'); 
 
             if (layerType === 'boundaries') {
@@ -609,7 +605,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderFraClaims(stateKey, districtName || null);
 
             } else if (layerType === 'forest-cover') {
-                // The forest layer itself handles the state/district filtering inside renderForestCover
+                // Must have a state selected to show a thematic map of the area
+                 if (!stateKey) { 
+                    updateStatus('Select a state to simulate forest cover.'); 
+                    // Revert to boundaries radio button if no state is selected
+                    boundariesRadio.checked = true;
+                    return; 
+                }
                 renderForestCover();
             }
         });
