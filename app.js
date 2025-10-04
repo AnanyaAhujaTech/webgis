@@ -316,15 +316,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const popupContent = `
                     <strong>FRA Claim/Title Details</strong><br>
                     <hr style="margin: 5px 0; border-color: #ddd;">
-                    1. **Claim ID**: ${props.id}<br>
-                    2. **Claim/Title Type**: <strong>${props.Claim_Type}</strong><br>
-                    3. **Status**: ${props.Status}<br>
-                    4. **Name(s) of Holder(s)**: ${props.Name_Holders || 'N/A'}<br>
-                    5. **Area (Hectares)**: ${props.Area_Hectares}<br>
-                    6. **Title No.**: ${props.Title_No}<br>
-                    7. **Village/Gram Sabha**: ${props.Village || 'N/A'}<br>
-                    8. **Gram Panchayat**: ${props.GP || 'N/A'}<br>
-                    9. **Tehsil/Taluka**: ${props.Tehsil || 'N/A'}
+                    1. Claim ID: ${props.id}<br>
+                    2. Claim/Title Type: <strong>${props.Claim_Type}</strong><br>
+                    3. Status: ${props.Status}<br>
+                    4. Name(s) of Holder(s): ${props.Name_Holders || 'N/A'}<br>
+                    5. Area (Hectares): ${props.Area_Hectares}<br>
+                    6. Title No.: ${props.Title_No}<br>
+                    7. Village/Gram Sabha: ${props.Village || 'N/A'}<br>
+                    8. Gram Panchayat: ${props.GP || 'N/A'}<br>
+                    9. Tehsil/Taluka: ${props.Tehsil || 'N/A'}
                 `;
                 layer.bindPopup(popupContent);
             }
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateStatus(`Displaying ${filteredClaims.length} FRA claim polygons for ${districtName || stateName}.`, false);
         
-        // **FIX: Pass the newly created layer to autoCollapseTopBar to ensure correct zoom**
+        // Pass the newly created layer to autoCollapseTopBar to ensure correct zoom
         autoCollapseTopBar(fraClaimsLayer);
     }
 
@@ -373,20 +373,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 return r.json();
             })
             .then(data => {
-                let selectedFeatureBounds = null;
+                let targetBounds = null; // Will hold the bounds of the state OR selected district
 
+                if (districtName) {
+                    // FIX: Pre-calculate bounds for the *selected* district first
+                    const selectedFeature = data.features.find(f => 
+                        f.properties && f.properties.district === districtName
+                    );
+
+                    if (selectedFeature) {
+                        const tempLayer = L.geoJSON(selectedFeature);
+                        targetBounds = tempLayer.getBounds();
+                    } else {
+                        // Fallback if the selected district isn't found in the GeoJSON
+                        console.warn(`District feature for ${districtName} not found.`);
+                    }
+                }
+                
                 const styleFeature = (feature) => {
                     const isSelected = districtName 
                         ? (feature.properties && feature.properties.district === districtName) 
                         : true; 
-
-                    if (isSelected && districtName) {
-                        // Calculate bounds for the selected district/state feature
-                        if (!selectedFeatureBounds) {
-                            const tempLayer = L.geoJSON(feature);
-                            selectedFeatureBounds = tempLayer.getBounds();
-                        }
-                    }
                     
                     return {
                         color: isSelected ? config.color : '#444',
@@ -398,13 +405,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 currentLayer = L.geoJSON(data, { style: styleFeature }).addTo(map);
 
-                const bounds = selectedFeatureBounds || currentLayer.getBounds();
+                // Use the pre-calculated bounds or the bounds of the entire layer
+                const bounds = targetBounds || currentLayer.getBounds();
+                
                 map.fitBounds(bounds, {
                     paddingTopLeft: getFitBoundsPadding()
                 });
 
                 updateStatus(statusMessage);
-                // **FIX: Call autoCollapseTopBar after the boundary layer is rendered and fitted**
+                // Call autoCollapseTopBar after the boundary layer is rendered and fitted
                 autoCollapseTopBar(currentLayer);
             })
             .catch(err => {
