@@ -6,15 +6,6 @@ html, body {
     font-size: 14px; /* Base font size reduction */
 }
 
-/* NEW: CSS for the simulated layer filter */
-/* This class will be applied to the map container only when the forest layer is active */
-.leaflet-layer.forest-simulated-layer img {
-    /* Apply a strong sepia tone, increase saturation, and hue-rotate to green */
-    filter: sepia(0.8) saturate(3) hue-rotate(100deg);
-    transition: filter 0.5s ease; /* Smooth transition */
-}
-
-
 /* Top Bar Styling - Thinner, Centered Title */
 #top-bar {
     position: fixed;
