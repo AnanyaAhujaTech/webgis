@@ -6,6 +6,15 @@ html, body {
     font-size: 14px; /* Base font size reduction */
 }
 
+/* NEW: CSS for the simulated layer filter */
+/* This class will be applied to the map container only when the forest layer is active */
+.leaflet-layer.forest-simulated-layer img {
+    /* Apply a strong sepia tone, increase saturation, and hue-rotate to green */
+    filter: sepia(0.8) saturate(3) hue-rotate(100deg);
+    transition: filter 0.5s ease; /* Smooth transition */
+}
+
+
 /* Top Bar Styling - Thinner, Centered Title */
 #top-bar {
     position: fixed;
@@ -176,7 +185,7 @@ label {
     transform: translateX(100%); /* Slide out */
 }
 
-/* NEW: Sidebar Toggle Button Styling */
+/* Sidebar Toggle Button Styling */
 #sidebar-toggle-button {
     position: absolute;
     top: 50%;
@@ -254,7 +263,8 @@ label {
 /* Responsive adjustment */
 @media (max-width: 768px) {
     #top-bar:not(.collapsed) + #map {
-        padding-top: 300px;
+        padding-top: 300px; /* Adjust for stacked content on small screens */
+    }
     #stats-sidebar {
         width: 100%;
         height: 250px;
