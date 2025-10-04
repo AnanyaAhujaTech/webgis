@@ -33,6 +33,8 @@ html, body {
     justify-content: center; /* Center the title */
     align-items: center;
     position: relative;
+    /* FIX: Ensure header content is vertically centered in the collapsed bar */
+    height: 100%; 
 }
 
 #top-bar h1 {
@@ -45,20 +47,23 @@ html, body {
 #collapse-button {
     position: absolute;
     /* FIX: Set right to 60px to align the button relative to the padding, 
-       making the center of the title appear visually correct. */
+        making the center of the title appear visually correct. */
     right: 60px; 
     top: 50%;
-    transform: translateY(-50%);
+    /* FIX: Remove translateY to allow the icon's container to be centered */
+    transform: translateY(-50%); 
     background: none;
     border: none;
     color: #fff;
     font-size: 1.2rem; /* Smaller icon */
     cursor: pointer;
     transition: transform 0.3s ease;
+    /* NEW: Removed fixed height to allow vertical centering by 'top: 50%' */
 }
 
 #top-bar.collapsed #collapse-button i {
-    transform: translateY(-50%) rotate(180deg);
+    /* Only apply the rotation on collapse, not the translate */
+    transform: rotate(180deg);
 }
 
 #control-content {
@@ -145,8 +150,9 @@ label {
     transition: padding-top 0.3s ease, margin-right 0.3s ease;
 }
 
-#top-bar:not(.collapsed) + #map {
-    padding-top: 190px; /* Adjusted to new expanded height */
+/* Adjusted to new expanded height */
+#top-bar:not(.collapsed) + #map { 
+    padding-top: 190px;
 }
 
 /* --- Statistics Sidebar Styling --- */
