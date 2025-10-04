@@ -8,9 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
         attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    let currentLayer = null; // State or District GeoJSON layer
-    let fraClaimsLayer = null; // Layer for the small polygons
-
+    let currentLayer = null; // State or District GeoJSON layer (Boundaries)
+    let fraClaimsLayer = null; // Layer for the small polygons (FRA Claims)
+    
     // --- Configuration & Data (Unchanged for State Data) ---
     const stateData = {
         'madhya-pradesh': {
@@ -68,61 +68,29 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /**
-     * @NEW_IRREGULAR_POLYGON_LOGIC
-     * Generates a single GeoJSON polygon feature with an irregular shape by
-     * calculating random offsets for each corner vertex.
+     * @NEW_SQUARE_POLYGON_LOGIC
+     * Generates a square GeoJSON polygon feature centered at [lat, lon].
+     * Randomly assigns 'isTitle' for styling and creates diverse properties.
      */
-    function createDummyPolygon(lat, lon, state, district, id) {
-        const centerLat = lat;
-        const centerLon = lon;
+    function createDummySquarePolygon(lat, lon, state, district, id) {
+        // Base size for the claim area (in degrees, slightly smaller than old)
+        const size = 0.005; 
+        const halfSize = size / 2;
         
-        // Base size for the claim area (in degrees)
-        const baseSize = 0.007; 
+        // Coordinates for a square (counter-clockwise order is standard but Leaflet handles it)
+        const vertices = [
+            [lon - halfSize, lat - halfSize], // SW
+            [lon + halfSize, lat - halfSize], // SE
+            [lon + halfSize, lat + halfSize], // NE
+            [lon - halfSize, lat + halfSize], // NW
+            [lon - halfSize, lat - halfSize]  // Close the loop
+        ];
         
-        // Random number of vertices (6 to 9)
-        const numVertices = Math.floor(Math.random() * 4) + 6; 
-        
-        // Array to store the [lon, lat] pairs
-        let vertices = [];
-        
-        // We'll calculate 4 base corners and then randomly offset them
-        for (let i = 0; i < numVertices; i++) {
-            // Determine the angle for the vertex (0 to 2*PI radians)
-            const angle = (i / numVertices) * 2 * Math.PI;
-            
-            // Introduce size variation (0.7 to 1.3 times baseSize)
-            const distanceFactor = (Math.random() * 0.6) + 0.7; 
-            const finalRadius = distanceFactor * baseSize;
-
-            // Apply random jitter to the angle (up to +/- 20 degrees, 0.35 rad)
-            const angleJitter = (Math.random() * 0.7) - 0.35;
-            const finalAngle = angle + angleJitter;
-            
-            // Convert polar back to cartesian offsets
-            const deltaLon = finalRadius * Math.cos(finalAngle);
-            const deltaLat = finalRadius * Math.sin(finalAngle);
-            
-            const newLon = centerLon + deltaLon;
-            const newLat = centerLat + deltaLat;
-
-            vertices.push([newLon, newLat]);
-        }
-
-        // --- SORT VERTICES TO PREVENT SELF-INTERSECTION (CRITICAL FOR IRREGULARITY) ---
-        const avgLon = vertices.reduce((sum, v) => sum + v[0], 0) / vertices.length;
-        const avgLat = vertices.reduce((sum, v) => sum + v[1], 0) / vertices.length;
-
-        vertices.sort((a, b) => {
-            // Calculate angle relative to the center
-            const angleA = Math.atan2(a[1] - avgLat, a[0] - avgLon);
-            const angleB = Math.atan2(b[1] - avgLat, b[0] - avgLon);
-            return angleA - angleB;
-        });
-
-        // Close the polygon by adding the first vertex to the end
-        if (vertices.length > 0) {
-            vertices.push(vertices[0]);
-        }
+        const isTitle = Math.random() < 0.5; // 50% chance of being a distributed title
+        const areaHectares = (Math.random() * (4.0 - 0.5) + 0.5).toFixed(2); // 0.5 to 4.0 hectares
+        const nameHolders = isTitle 
+            ? `Tribal Holder ${id}` 
+            : `Applicant ${id} (Waiting)`;
 
         return {
             "type": "Feature",
@@ -130,10 +98,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 "id": id,
                 "State": state,
                 "District": district,
-                "Name_Holders": `Holder A, B (ID: ${id})`,
-                "Village": `Village ${id}`,
-                "GP": `Gram Panchayat ${id}`,
-                "Tehsil": `Tehsil ${id}`
+                "Claim_Type": isTitle ? 'Title Distributed' : 'Claim Received',
+                "Status": isTitle ? 'Approved' : 'Pending Verification',
+                "Area_Hectares": `${areaHectares}`,
+                "Title_No": isTitle ? `TN-${id}` : 'N/A',
+                "Name_Holders": nameHolders,
+                "Village": `Gram Sabha Area ${Math.floor(id / 5) + 1}`,
+                "GP": `GP Sector ${Math.floor(id / 10) + 1}`,
+                "Tehsil": `Tehsil Block ${Math.floor(id / 20) + 1}`
             },
             "geometry": {
                 "type": "Polygon",
@@ -143,44 +115,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // GeoJSON for the dummy claims (Coordinates are the center points of the new irregular polygons)
+    // GeoJSON for the dummy claims (Coordinates are the center points)
     const fraClaimsGeoJSON = {
         "type": "FeatureCollection",
         "features": [
-            // Madhya Pradesh - Burhanpur (3 Polygons) - Coordinates adjusted for spacing
-            createDummyPolygon(21.28, 76.30, 'Madhya Pradesh', 'Burhanpur', 19729),
-            createDummyPolygon(21.35, 76.30, 'Madhya Pradesh', 'Burhanpur', 22493),
-            createDummyPolygon(21.15, 76.45, 'Madhya Pradesh', 'Burhanpur', 32083),
+            // Madhya Pradesh - Burhanpur (3 Polygons)
+            createDummySquarePolygon(21.28, 76.30, 'Madhya Pradesh', 'Burhanpur', 101),
+            createDummySquarePolygon(21.35, 76.30, 'Madhya Pradesh', 'Burhanpur', 102),
+            createDummySquarePolygon(21.15, 76.45, 'Madhya Pradesh', 'Burhanpur', 103),
 
-            // Madhya Pradesh - Seoni (5 Polygons) - Coordinates adjusted for spacing
-            createDummyPolygon(22.05, 79.20, 'Madhya Pradesh', 'Seoni', 4),
-            createDummyPolygon(22.15, 79.50, 'Madhya Pradesh', 'Seoni', 5),
-            createDummyPolygon(21.90, 79.70, 'Madhya Pradesh', 'Seoni', 6),
-            createDummyPolygon(22.25, 79.35, 'Madhya Pradesh', 'Seoni', 7),
-            createDummyPolygon(22.00, 79.85, 'Madhya Pradesh', 'Seoni', 8),
+            // Madhya Pradesh - Seoni (5 Polygons)
+            createDummySquarePolygon(22.05, 79.20, 'Madhya Pradesh', 'Seoni', 201),
+            createDummySquarePolygon(22.15, 79.50, 'Madhya Pradesh', 'Seoni', 202),
+            createDummySquarePolygon(21.90, 79.70, 'Madhya Pradesh', 'Seoni', 203),
+            createDummySquarePolygon(22.25, 79.35, 'Madhya Pradesh', 'Seoni', 204),
+            createDummySquarePolygon(22.00, 79.85, 'Madhya Pradesh', 'Seoni', 205),
 
-            // Telangana - Adilabad (4 Polygons) - Coordinates adjusted for spacing
-            createDummyPolygon(19.40, 78.40, 'Telangana', 'Adilabad', 9),
-            createDummyPolygon(19.70, 78.65, 'Telangana', 'Adilabad', 10),
-            createDummyPolygon(19.55, 78.90, 'Telangana', 'Adilabad', 11),
-            createDummyPolygon(19.85, 78.75, 'Telangana', 'Adilabad', 12),
+            // Telangana - Adilabad (4 Polygons)
+            createDummySquarePolygon(19.40, 78.40, 'Telangana', 'Adilabad', 301),
+            createDummySquarePolygon(19.70, 78.65, 'Telangana', 'Adilabad', 302),
+            createDummySquarePolygon(19.55, 78.90, 'Telangana', 'Adilabad', 303),
+            createDummySquarePolygon(19.85, 78.75, 'Telangana', 'Adilabad', 304),
 
-            // Tripura - North Tripura (6 Polygons) - Coordinates adjusted for spacing
-            createDummyPolygon(24.30, 91.80, 'Tripura', 'North Tripura', 13),
-            createDummyPolygon(24.45, 92.10, 'Tripura', 'North Tripura', 14),
-            createDummyPolygon(24.20, 92.25, 'Tripura', 'North Tripura', 15),
-            createDummyPolygon(24.50, 91.95, 'Tripura', 'North Tripura', 16),
-            createDummyPolygon(24.35, 92.30, 'Tripura', 'North Tripura', 17),
-            createDummyPolygon(24.55, 92.15, 'Tripura', 'North Tripura', 18),
+            // Tripura - North Tripura (6 Polygons)
+            createDummySquarePolygon(24.30, 91.80, 'Tripura', 'North Tripura', 401),
+            createDummySquarePolygon(24.45, 92.10, 'Tripura', 'North Tripura', 402),
+            createDummySquarePolygon(24.20, 92.25, 'Tripura', 'North Tripura', 403),
+            createDummySquarePolygon(24.50, 91.95, 'Tripura', 'North Tripura', 404),
+            createDummySquarePolygon(24.35, 92.30, 'Tripura', 'North Tripura', 405),
+            createDummySquarePolygon(24.55, 92.15, 'Tripura', 'North Tripura', 406),
 
-            // Odisha - Bhadrak (7 Polygons) - Coordinates adjusted for spacing
-            createDummyPolygon(21.10, 86.60, 'Odisha', 'Bhadrak', 19),
-            createDummyPolygon(20.95, 86.85, 'Odisha', 'Bhadrak', 20),
-            createDummyPolygon(21.25, 87.00, 'Odisha', 'Bhadrak', 21),
-            createDummyPolygon(21.05, 87.20, 'Odisha', 'Bhadrak', 22),
-            createDummyPolygon(21.30, 86.75, 'Odisha', 'Bhadrak', 23),
-            createDummyPolygon(20.90, 87.05, 'Odisha', 'Bhadrak', 24),
-            createDummyPolygon(21.15, 86.95, 'Odisha', 'Bhadrak', 25)
+            // Odisha - Bhadrak (7 Polygons)
+            createDummySquarePolygon(21.10, 86.60, 'Odisha', 'Bhadrak', 501),
+            createDummySquarePolygon(20.95, 86.85, 'Odisha', 'Bhadrak', 502),
+            createDummySquarePolygon(21.25, 87.00, 'Odisha', 'Bhadrak', 503),
+            createDummySquarePolygon(21.05, 87.20, 'Odisha', 'Bhadrak', 504),
+            createDummySquarePolygon(21.30, 86.75, 'Odisha', 'Bhadrak', 505),
+            createDummySquarePolygon(20.90, 87.05, 'Odisha', 'Bhadrak', 506),
+            createDummySquarePolygon(21.15, 86.95, 'Odisha', 'Bhadrak', 507)
         ]
     };
 
@@ -192,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusMessageDiv = document.getElementById('status-message');
     const statisticsPanel = document.getElementById('statistics-panel');
     const fraClaimsRadio = document.getElementById('fra-claims-radio');
+    const boundariesRadio = document.getElementById('boundaries-radio'); // NEW
     const statsSidebar = document.getElementById('stats-sidebar');
 
     // --- Core Functions ---
@@ -202,8 +175,32 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function getFitBoundsPadding() {
         // topBar.offsetHeight returns the current rendered height of the element (38px or ~190px)
-        return [topBar.offsetHeight + 10, 0]; // [Y offset, X offset]
+        const sidebarWidth = statsSidebar.classList.contains('hidden') ? 0 : 260;
+        return [topBar.offsetHeight + 10, sidebarWidth]; // [Y offset, X offset]
     }
+    
+    /**
+     * Collapses the top bar and re-fits the map view.
+     */
+    function autoCollapseTopBar() {
+        if (!topBar.classList.contains('collapsed')) {
+            topBar.classList.add('collapsed');
+            collapseButton.setAttribute('aria-expanded', 'false');
+            
+            // Invalidate map size and re-fit after the transition
+            setTimeout(() => {
+                map.invalidateSize();
+                const layerToFit = fraClaimsLayer || currentLayer;
+                if (layerToFit) {
+                     map.fitBounds(layerToFit.getBounds(), {
+                         paddingTopLeft: getFitBoundsPadding(),
+                         animate: true 
+                     });
+                }
+            }, 300); // Match CSS transition duration
+        }
+    }
+
 
     function clearLayer(layerName = 'all') {
         if (layerName === 'current' || layerName === 'all') {
@@ -301,114 +298,60 @@ document.addEventListener('DOMContentLoaded', () => {
                 const popupContent = `
                     <strong>Claim Details (Dummy Data)</strong><br>
                     <hr style="margin: 5px 0; border-color: #ddd;">
-                    1. Name(s) of the holder(s) of community forest right: <strong>${props.Name_Holders || 'N/A'}</strong><br>
-                    2. Village/Gram Sabha: <strong>${props.Village || 'N/A'}</strong><br>
-                    3. Gram Panchayat: <strong>${props.GP || 'N/A'}</strong><br>
-                    4. Tehsil/Taluka: <strong>${props.Tehsil || 'N/A'}</strong><br>
-                    5. District: <strong>${props.District || 'N/A'}</strong>
+                    1. **Claim ID**: ${props.id}<br>
+                    2. **Status**: <strong>${props.Status}</strong><br>
+                    3. **Claim/Title Type**: ${props.Claim_Type}<br>
+                    4. **Name(s) of Holder(s)**: ${props.Name_Holders || 'N/A'}<br>
+                    5. **Area (Hectares)**: ${props.Area_Hectares}<br>
+                    6. **Title No.**: ${props.Title_No}<br>
+                    7. **Village/Gram Sabha**: ${props.Village || 'N/A'}<br>
+                    8. **Gram Panchayat**: ${props.GP || 'N/A'}<br>
+                    9. **Tehsil/Taluka**: ${props.Tehsil || 'N/A'}
                 `;
                 layer.bindPopup(popupContent);
             }
         };
 
         fraClaimsLayer = L.geoJSON(claimsGeoJSON, {
-            style: {
-                color: '#FFFF00', // Yellow outline for claims
-                fillColor: '#FFD700', // Gold fill
-                fillOpacity: 0.8,
-                weight: 2
+            style: (feature) => {
+                const isTitle = feature.properties.Claim_Type === 'Title Distributed';
+                return {
+                    color: isTitle ? '#DAA520' : '#FF4500', // Gold/DarkOrange outline
+                    fillColor: isTitle ? '#FFD700' : '#FFA500', // Yellow vs Orange fill
+                    fillOpacity: 0.8,
+                    weight: 1.5
+                };
             },
             onEachFeature: onEachFeature
         }).addTo(map);
 
         updateStatus(`Displaying ${filteredClaims.length} FRA claim polygons for ${districtName || stateName}.`, false);
         
-        // **NEW: Zoom specifically to the claim layer bounds when rendered**
-        if (fraClaimsLayer && districtName) {
-             map.fitBounds(fraClaimsLayer.getBounds(), {
-                paddingTopLeft: getFitBoundsPadding(),
-                maxZoom: 14 // Zoom closer to see the irregular shape clearly
-            });
-        }
-    }
-
-    // --- State and District Logic ---
-
-    function handleStateSelection(stateKey) {
-        clearLayer();
-
-        districtDropdown.innerHTML = '<option value="" disabled selected>-- Select a District --</option>';
-        districtDropdown.disabled = true;
-
-        if (!stateKey) {
-            updateStatus('Please select a State to begin.');
-            renderStatistics(null);
-            return;
-        }
-
-        const config = stateData[stateKey];
-        renderStatistics(stateKey); // Show statistics in the new sidebar
-        updateStatus(`State selected: ${config.name}. Loading state boundary...`);
-
-        config.districts.forEach(distName => {
-            const option = document.createElement('option');
-            option.value = distName;
-            option.textContent = distName;
-            districtDropdown.appendChild(option);
+        // Zoom specifically to the claim layer bounds when rendered
+        map.fitBounds(fraClaimsLayer.getBounds(), {
+             paddingTopLeft: getFitBoundsPadding(),
+             maxZoom: 14 
         });
-        districtDropdown.disabled = false;
-
-        const stateFile = `${stateKey}.geojson`;
-
-        fetch(stateFile)
-            .then(r => {
-                if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                return r.json();
-            })
-            .then(data => {
-                currentLayer = L.geoJSON(data, {
-                    style: {
-                        color: config.color,
-                        fillColor: config.fillColor,
-                        fillOpacity: 0.3,
-                        weight: 2
-                    }
-                }).addTo(map);
-
-                // FIX: Pass a padding option to adjust the map fit area
-                map.fitBounds(currentLayer.getBounds(), {
-                    paddingTopLeft: getFitBoundsPadding()
-                });
-
-                // Conditionally render FRA claims based on radio button
-                if (fraClaimsRadio.checked) {
-                    // Render claims but don't force a zoom yet (zoom happens on district select)
-                    renderFraClaims(stateKey); 
-                }
-
-                updateStatus(`State layer for ${config.name} loaded. Select a district or view FRA claims.`);
-            })
-            .catch(err => {
-                console.error(`Error loading state file ${stateFile}:`, err);
-                updateStatus(`Could not load ${config.name} state file. Check the console.`, true);
-            });
     }
 
-    function handleDistrictSelection(stateKey, districtName) {
-        renderStatistics(stateKey); // Re-render stats (keeps them visible)
+    function renderBoundaries(stateKey, districtName) {
+        clearLayer('fra-claims'); // Clear claim layer if active
+        clearLayer('current'); // Clear previous boundary layer
 
-        if (!districtName) {
-            handleStateSelection(stateKey);
-            return;
-        }
-
-        clearLayer('current'); // Clear state/district layer
+        if (!stateKey) return;
 
         const config = stateData[stateKey];
-        const distFile = `${stateKey}Dist.geojson`;
-        updateStatus(`District selected: ${districtName}. Loading district layer...`);
+        let fileToLoad = `${stateKey}.geojson`;
+        let statusMessage = `State layer for ${config.name} loaded. Select a district or view FRA claims.`;
 
-        fetch(distFile)
+        if (districtName) {
+            fileToLoad = `${stateKey}Dist.geojson`;
+            statusMessage = `District selected: ${districtName}. Loading district layer...`;
+        }
+
+        updateStatus(`Loading boundary layer: ${fileToLoad}...`);
+
+        fetch(fileToLoad)
             .then(r => {
                 if (!r.ok) throw new Error(`HTTP ${r.status}`);
                 return r.json();
@@ -417,18 +360,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 let selectedFeatureBounds = null;
 
                 const styleFeature = (feature) => {
-                    const isSelected = feature.properties && feature.properties.district === districtName;
+                    const isSelected = districtName 
+                        ? (feature.properties && feature.properties.district === districtName) 
+                        : true; // All features are 'selected' if viewing state
 
                     if (isSelected) {
-                        if (!selectedFeatureBounds) {
+                        // Calculate bounds for the selected district/state feature
+                        if (districtName && !selectedFeatureBounds) {
                             const tempLayer = L.geoJSON(feature);
                             selectedFeatureBounds = tempLayer.getBounds();
                         }
                         return {
                             color: config.color,
                             fillColor: config.fillColor,
-                            fillOpacity: 0.6,
-                            weight: 3
+                            fillOpacity: districtName ? 0.6 : 0.3,
+                            weight: districtName ? 3 : 2
                         };
                     }
                     // Style for other districts in the file (dimmed)
@@ -442,28 +388,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 currentLayer = L.geoJSON(data, { style: styleFeature }).addTo(map);
 
-                // FIX: Pass a padding option to adjust the map fit area
-                const fitOptions = {
+                const bounds = selectedFeatureBounds || currentLayer.getBounds();
+                map.fitBounds(bounds, {
                     paddingTopLeft: getFitBoundsPadding()
-                };
+                });
 
-                if (selectedFeatureBounds) {
-                    map.fitBounds(selectedFeatureBounds, fitOptions);
-                } else {
-                    map.fitBounds(currentLayer.getBounds(), fitOptions);
-                }
-
-                // Conditionally render FRA claims based on radio button, filtered by district
-                if (fraClaimsRadio.checked) {
-                    renderFraClaims(stateKey, districtName); // This now includes a zoom
-                }
-
-                updateStatus(`District layer for ${districtName} loaded.`);
+                updateStatus(statusMessage);
             })
             .catch(err => {
-                console.error(`Error loading district file ${distFile}:`, err);
-                updateStatus(`Could not load district file for ${config.name}. Check the console.`, true);
+                console.error(`Error loading file ${fileToLoad}:`, err);
+                updateStatus(`Could not load boundary file for ${config.name}. Check the console.`, true);
             });
+    }
+
+    // --- State and District Logic ---
+
+    function handleStateSelection(stateKey) {
+        // Clear old layers and district options
+        clearLayer();
+        districtDropdown.innerHTML = '<option value="" disabled selected>-- Select a District --</option>';
+        districtDropdown.disabled = true;
+
+        if (!stateKey) {
+            updateStatus('Please select a State to begin.');
+            renderStatistics(null);
+            return;
+        }
+
+        const config = stateData[stateKey];
+        renderStatistics(stateKey); // Show statistics
+        
+        // Populate districts
+        config.districts.forEach(distName => {
+            const option = document.createElement('option');
+            option.value = distName;
+            option.textContent = distName;
+            districtDropdown.appendChild(option);
+        });
+        districtDropdown.disabled = false;
+        
+        // Render the default layer (boundaries)
+        renderBoundaries(stateKey, null); 
+        
+        // Auto-collapse the control bar
+        autoCollapseTopBar(); 
+    }
+
+    function handleDistrictSelection(stateKey, districtName) {
+        renderStatistics(stateKey); // Keep stats visible
+
+        if (!districtName) {
+            // If district is unselected, revert to state view
+            handleStateSelection(stateKey);
+            return;
+        }
+        
+        // Check which radio button is active and render the corresponding layer
+        if (boundariesRadio.checked) {
+            renderBoundaries(stateKey, districtName);
+        } else if (fraClaimsRadio.checked) {
+            // Render claims layer and fit bounds to the claims
+            renderFraClaims(stateKey, districtName);
+        }
+        
+        // Auto-collapse the control bar
+        autoCollapseTopBar(); 
     }
 
 
@@ -482,16 +471,16 @@ document.addEventListener('DOMContentLoaded', () => {
     collapseButton.addEventListener('click', () => {
         const isCollapsed = topBar.classList.toggle('collapsed');
         collapseButton.setAttribute('aria-expanded', !isCollapsed);
-        // Invalidate map size to correct potential layout issues after CSS transition
+        
+        // Invalidate map size and re-fit after the transition
         setTimeout(() => {
             map.invalidateSize();
-            // Re-fit the map view to account for the new header height
             const layerToFit = fraClaimsLayer || currentLayer;
             if (layerToFit) {
                  map.fitBounds(layerToFit.getBounds(), {
-                    paddingTopLeft: getFitBoundsPadding(),
-                    animate: true 
-                });
+                     paddingTopLeft: getFitBoundsPadding(),
+                     animate: true 
+                 });
             }
         }, 300); // Match CSS transition duration
     });
@@ -513,18 +502,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // FRA Claims Radio Button Change
-    fraClaimsRadio.addEventListener('change', () => {
-        const stateKey = stateDropdown.value;
-        const districtName = districtDropdown.value;
+    // Layer Radio Button Change
+    document.querySelectorAll('input[name="layer-type"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            const stateKey = stateDropdown.value;
+            const districtName = districtDropdown.value;
 
-        if (fraClaimsRadio.checked && stateKey) {
-            renderFraClaims(stateKey, districtName || null);
-        } else {
-            clearLayer('fra-claims');
-        }
+            if (!stateKey) {
+                updateStatus('Select a state before changing the layer view.');
+                return;
+            }
+
+            if (boundariesRadio.checked) {
+                renderBoundaries(stateKey, districtName || null);
+            } else if (fraClaimsRadio.checked) {
+                renderFraClaims(stateKey, districtName || null);
+            }
+        });
     });
-
+    
     // Initial message
-    updateStatus('Welcome to the WebGIS system. Select a state to begin.');
+    updateStatus('Welcome to the FRA Atlas. Select a state to begin.');
 });
