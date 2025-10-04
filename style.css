@@ -59,7 +59,7 @@ html, body {
 
 #top-bar.collapsed #collapse-button i {
     transform: translateY(-50%) rotate(180deg);
-    padding-top: 5px
+    padding-top: 5px;
 }
 
 #control-content {
