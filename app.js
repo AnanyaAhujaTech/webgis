@@ -67,7 +67,82 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // GeoJSON for the dummy claims (UPDATED COORDINATES AND SPACING)
+    /**
+     * @NEW_FUNCTION: Generates a single GeoJSON polygon feature with an irregular shape
+     * around the given latitude and longitude to simulate realistic land boundaries.
+     */
+    function createDummyPolygon(lat, lon, state, district, id) {
+        const centerLat = lat;
+        const centerLon = lon;
+        
+        // Base size/radius for the claim area (in degrees, approx 1km wide)
+        const baseRadius = 0.005; 
+        
+        // Random number of vertices (5 to 8 for irregular shapes like pentagon, hexagon, etc.)
+        const numVertices = Math.floor(Math.random() * 4) + 5; 
+
+        let vertices = [];
+
+        for (let i = 0; i < numVertices; i++) {
+            // Calculate the base angle for evenly spaced vertices
+            const baseAngle = (i / numVertices) * 2 * Math.PI;
+
+            // Introduce randomness to the angle and distance for irregularity
+            // Angle randomness: up to +/- 10 degrees (0.1745 radians)
+            const angleOffset = (Math.random() * 0.349) - 0.1745; 
+            
+            // Distance randomness: up to +/- 50% of baseRadius, ensuring a minimum size
+            const distanceFactor = (Math.random() * 0.5) + 0.5; // Factor between 0.5 and 1.0
+            const finalDistance = distanceFactor * baseRadius;
+
+            const finalAngle = baseAngle + angleOffset;
+
+            // Calculate offset (rough approximation, as earth curvature is ignored for small distances)
+            // Convert polar coordinates (distance, angle) to Cartesian (deltaLon, deltaLat)
+            const deltaLon = finalDistance * Math.cos(finalAngle);
+            const deltaLat = finalDistance * Math.sin(finalAngle);
+            
+            const newLon = centerLon + deltaLon;
+            const newLat = centerLat + deltaLat;
+
+            vertices.push([newLon, newLat]);
+        }
+
+        // Sort vertices by angle around a calculated centroid to prevent self-intersection
+        const avgLon = vertices.reduce((sum, v) => sum + v[0], 0) / vertices.length;
+        const avgLat = vertices.reduce((sum, v) => sum + v[1], 0) / vertices.length;
+
+        vertices.sort((a, b) => {
+            const angleA = Math.atan2(a[1] - avgLat, a[0] - avgLon);
+            const angleB = Math.atan2(b[1] - avgLat, b[0] - avgLon);
+            return angleA - angleB;
+        });
+
+        // Close the polygon by adding the first vertex to the end
+        if (vertices.length > 0) {
+            vertices.push(vertices[0]);
+        }
+
+        return {
+            "type": "Feature",
+            "properties": {
+                "id": id,
+                "State": state,
+                "District": district,
+                "Name_Holders": `Holder A, B (ID: ${id})`,
+                "Village": `Village ${id}`,
+                "GP": `Gram Panchayat ${id}`,
+                "Tehsil": `Tehsil ${id}`
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [vertices] // GeoJSON expects an array of rings
+            }
+        };
+    }
+
+
+    // GeoJSON for the dummy claims (Coordinates are the center points of the new irregular polygons)
     const fraClaimsGeoJSON = {
         "type": "FeatureCollection",
         "features": [
@@ -108,31 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
 
-    // Function to create a polygon feature for demonstration (UPDATED SIZE)
-    function createDummyPolygon(lat, lon, state, district, id) {
-        // Increased size for wider polygons (0.005 -> 0.01)
-        const size = 0.01; 
-        return {
-            "type": "Feature",
-            "properties": {
-                "id": id,
-                "State": state,
-                "District": district,
-                "Name_Holders": `Holder A, B (ID: ${id})`,
-                "Village": `Village ${id}`,
-                "GP": `Gram Panchayat ${id}`,
-                "Tehsil": `Tehsil ${id}`
-            },
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [
-                    // Ensure the coordinates form a closed shape with the new size
-                    [[lon, lat], [lon + size, lat], [lon + size, lat + size], [lon, lat + size], [lon, lat]]
-                ]
-            }
-        };
-    }
-
     // --- DOM Elements ---
     const topBar = document.getElementById('top-bar');
     const collapseButton = document.getElementById('collapse-button');
@@ -144,6 +194,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const statsSidebar = document.getElementById('stats-sidebar');
 
     // --- Core Functions ---
+
+    /**
+     * Calculates the dynamic top padding for Leaflet's fitBounds function.
+     * This prevents the map boundary from being hidden behind the fixed top bar.
+     */
+    function getFitBoundsPadding() {
+        // topBar.offsetHeight returns the current rendered height of the element (38px or ~190px)
+        return [topBar.offsetHeight + 10, 0]; // [Y offset, X offset]
+    }
 
     function clearLayer(layerName = 'all') {
         if (layerName === 'current' || layerName === 'all') {
@@ -165,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessageDiv.style.color = isError ? '#ffdddd' : '#c8e6c9';
         statusMessageDiv.style.backgroundColor = isError ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)';
     }
-    
+
     // Function to show/hide the statistics sidebar
     function toggleStatsSidebar(show) {
         document.body.classList.toggle('stats-open', show);
@@ -180,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleStatsSidebar(false);
             return;
         }
-        
+
         const stats = stateData[stateKey].stats;
 
         // Function to format the three-part stats (Individual, Community, Total)
@@ -206,14 +265,14 @@ document.addEventListener('DOMContentLoaded', () => {
             <strong>% Claims disposed:</strong> ${stats.percent_disposed}<br>
             <strong>% Titles distributed:</strong> ${stats.percent_titles}
         `;
-        
+
         // Show the sidebar when stats are rendered
         toggleStatsSidebar(true);
     }
 
     function renderFraClaims(stateKey, districtName) {
         clearLayer('fra-claims'); // Clear previous claims layer
-        
+
         if (!stateKey) return;
 
         const stateName = stateData[stateKey].name;
@@ -307,7 +366,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }).addTo(map);
 
-                map.fitBounds(currentLayer.getBounds());
+                // FIX: Pass a padding option to adjust the map fit area
+                map.fitBounds(currentLayer.getBounds(), {
+                    paddingTopLeft: getFitBoundsPadding()
+                });
 
                 // Conditionally render FRA claims based on radio button
                 if (fraClaimsRadio.checked) {
@@ -370,10 +432,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 currentLayer = L.geoJSON(data, { style: styleFeature }).addTo(map);
 
+                // FIX: Pass a padding option to adjust the map fit area
+                const fitOptions = {
+                    paddingTopLeft: getFitBoundsPadding()
+                };
+
                 if (selectedFeatureBounds) {
-                    map.fitBounds(selectedFeatureBounds);
+                    map.fitBounds(selectedFeatureBounds, fitOptions);
                 } else {
-                    map.fitBounds(currentLayer.getBounds());
+                    map.fitBounds(currentLayer.getBounds(), fitOptions);
                 }
 
                 // Conditionally render FRA claims based on radio button, filtered by district
@@ -408,6 +475,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Invalidate map size to correct potential layout issues after CSS transition
         setTimeout(() => {
             map.invalidateSize();
+            // Re-fit the map view to account for the new header height
+            if (currentLayer) {
+                 map.fitBounds(currentLayer.getBounds(), {
+                    paddingTopLeft: getFitBoundsPadding(),
+                    animate: true 
+                });
+            }
         }, 300); // Match CSS transition duration
     });
 
@@ -443,3 +517,4 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial message
     updateStatus('Welcome to the WebGIS system. Select a state to begin.');
 });
+
