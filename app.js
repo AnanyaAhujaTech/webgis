@@ -4,29 +4,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const map = L.map('map').setView([22.5937, 78.9629], 5);
 
     // Initial Base Layer (OpenStreetMap standard tiles)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+    const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+        maxZoom: 19
     }).addTo(map);
 
     let currentLayer = null; // State or District GeoJSON layer (Boundaries)
     let fraClaimsLayer = null; // Layer for the small polygons (FRA Claims)
     
-    // NEW: Base layers for swapping
-    const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
-        maxZoom: 19
-    });
-
-    const esriWorldImageryLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-        maxZoom: 18
-    });
-    
-    // Start with the default OSM layer
-    openStreetMapLayer.addTo(map);
-
-
     // --- Configuration & Data (remains the same) ---
     const stateData = {
         'madhya-pradesh': {
@@ -207,13 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 fraClaimsLayer = null;
             }
         }
-        
-        // Always remove both custom base layers before adding the correct one
-        if (map.hasLayer(openStreetMapLayer)) map.removeLayer(openStreetMapLayer);
-        if (map.hasLayer(esriWorldImageryLayer)) map.removeLayer(esriWorldImageryLayer);
-        
-        // Remove the CSS filter class from the map container (leaflet-map-pane)
-        document.querySelector('.leaflet-map-pane').classList.remove('forest-simulated-layer');
     }
 
     function updateStatus(message, isError = false) {
@@ -279,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderFraClaims(stateKey, districtName) {
-        clearLayer('all'); // Clear everything, including the base layer
+        clearLayer('all'); 
         openStreetMapLayer.addTo(map); // Add default base layer
 
         if (!stateKey) return;
@@ -312,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     1. Claim ID: ${props.id}<br>
                     2. Claim/Title Type: <strong>${props.Claim_Type}</strong><br>
                     3. Status: ${props.Status}<br>
-                    4. Name(s) of Holder(s): ${props.Name_Holders || 'N/A'}<br>
+                    4. Name(s) of Holder(s)**: ${props.Name_Holders || 'N/A'}<br>
                     5. Area (Hectares): ${props.Area_Hectares}<br>
                     6. Title No.: ${props.Title_No}<br>
                     7. Village/Gram Sabha: ${props.Village || 'N/A'}<br>
@@ -347,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderBoundaries(stateKey, districtName) {
-        clearLayer('all'); // Clear everything, including the base layer
+        clearLayer('all'); 
         openStreetMapLayer.addTo(map); // Add default base layer
 
         if (!stateKey) return;
@@ -414,22 +392,87 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Renders the Simulated Forest Cover layer.
+     * NEW: Renders the Simulated Forest Cover layer by applying a semi-transparent green 
+     * fill over the selected state/district boundary.
      */
     function renderForestCover() {
         clearLayer('all'); 
+        openStreetMapLayer.addTo(map); // Keep OSM base layer for context
+
+        const stateKey = stateDropdown.value;
+        const districtName = districtDropdown.value;
         
-        // Add Satellite Imagery Base Layer
-        esriWorldImageryLayer.addTo(map);
-        
-        // Apply CSS filter to the entire map pane to simulate thematic data
-        // We find the map pane (which holds all tile layers) and add the class.
-        const mapPane = document.querySelector('.leaflet-map-pane');
-        if (mapPane) {
-            mapPane.classList.add('forest-simulated-layer');
+        if (!stateKey) {
+            updateStatus('Select a state to view forest cover simulation.');
+            return;
         }
 
-        updateStatus("Displaying Simulated Forest Cover over Satellite Imagery.", false);
+        const config = stateData[stateKey];
+        let fileToLoad = `${stateKey}.geojson`;
+        let statusMessage = `Simulating Forest Cover for ${config.name}.`;
+
+        if (districtName) {
+            fileToLoad = `${stateKey}Dist.geojson`;
+            statusMessage = `Simulating Forest Cover for ${districtName}.`;
+        }
+
+        updateStatus(`Loading boundary layer for forest simulation: ${fileToLoad}...`);
+
+        fetch(fileToLoad)
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then(data => {
+                let targetBounds = null; 
+                let targetFeature = null;
+
+                // Find the specific feature if a district is selected
+                if (districtName) {
+                     targetFeature = data.features.find(f => 
+                        f.properties && f.properties.district === districtName
+                    );
+                }
+                
+                // If a district is selected, use only that feature. Otherwise, use all features (state view).
+                const geoJsonData = targetFeature ? {
+                    "type": "FeatureCollection",
+                    "features": [targetFeature]
+                } : data;
+
+                // Style: Solid semi-transparent green fill over the area
+                const styleFeature = (feature) => {
+                    // For district view, we highlight only the target feature. For state view, all features get the style.
+                    const isTarget = !districtName || (feature.properties && feature.properties.district === districtName);
+                    
+                    if (isTarget) {
+                        return {
+                            color: '#006400', // Dark green border
+                            fillColor: '#228B22', // Forest Green fill
+                            fillOpacity: 0.5, // Semi-transparent
+                            weight: 2
+                        };
+                    }
+                    
+                    // Keep non-target districts hidden/dimmed if viewing multiple districts
+                    return { weight: 0, fillOpacity: 0 };
+                };
+
+                currentLayer = L.geoJSON(geoJsonData, { style: styleFeature }).addTo(map);
+                
+                // Calculate bounds (either the single district or the whole state layer)
+                const bounds = currentLayer.getBounds();
+                
+                map.fitBounds(bounds, {
+                    paddingTopLeft: getFitBoundsPadding()
+                });
+
+                updateStatus(statusMessage);
+            })
+            .catch(err => {
+                console.error(`Error loading boundary file for forest simulation:`, err);
+                updateStatus(`Could not load boundary file for forest simulation.`, true);
+            });
     }
 
 
@@ -475,15 +518,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // When district is selected, ensure the map displays the active layer type
+        // When district is selected, render the currently active layer type, filtered by district.
         if (boundariesRadio.checked) {
             renderBoundaries(stateKey, districtName);
         } else if (fraClaimsRadio.checked) {
             renderFraClaims(stateKey, districtName);
         } else if (forestCoverRadio.checked) {
-            // Forest cover layer is global, so just ensure it's still rendered and clear local layers.
-            clearLayer('fra-claims');
-            clearLayer('current');
+            // Rerender the forest layer, now filtered by district
             renderForestCover();
         }
 
@@ -514,6 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. Invalidate map size and re-fit after the transition
         setTimeout(() => {
             map.invalidateSize();
+            // Try to fit the currently active layer, if any
             const layerToFit = fraClaimsLayer || currentLayer;
             if (layerToFit) {
                  map.fitBounds(layerToFit.getBounds(), {
@@ -548,31 +590,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Layer Radio Button Change (Updated to handle 3 layers)
+    // Layer Radio Button Change (Handles all three layers)
     document.querySelectorAll('input[name="layer-type"]').forEach(radio => {
         radio.addEventListener('change', () => {
             const stateKey = stateDropdown.value;
             const districtName = districtDropdown.value;
             const layerType = radio.value;
 
-            // Always clear all dynamic layers (GeoJSON and WMS) before rendering the selected one
+            // Clear all dynamic layers before rendering the selected one
             clearLayer('all'); 
 
             if (layerType === 'boundaries') {
-                if (!stateKey) {
-                    updateStatus('Select a state to view boundaries.');
-                    return;
-                }
+                if (!stateKey) { updateStatus('Select a state to view boundaries.'); return; }
                 renderBoundaries(stateKey, districtName || null);
 
             } else if (layerType === 'fra-claims') {
-                 if (!stateKey) {
-                    updateStatus('Select a state to view FRA claims.');
-                    return;
-                }
+                 if (!stateKey) { updateStatus('Select a state to view FRA claims.'); return; }
                 renderFraClaims(stateKey, districtName || null);
 
             } else if (layerType === 'forest-cover') {
+                // The forest layer itself handles the state/district filtering inside renderForestCover
                 renderForestCover();
             }
         });
