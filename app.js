@@ -198,29 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return [topBar.offsetHeight + 10, sidebarWidth]; // [Y offset, X offset]
     }
     
-    /**
-     * Collapses the top bar and re-fits the map view.
-     * @param {L.Layer|null} layerToFit - The layer to zoom to after collapse.
-     */
-    function autoCollapseTopBar(layerToFit = null) {
-        if (!topBar.classList.contains('collapsed')) {
-            topBar.classList.add('collapsed');
-            collapseButton.setAttribute('aria-expanded', 'false');
-            
-            // Invalidate map size and re-fit after the transition
-            setTimeout(() => {
-                map.invalidateSize();
-                const targetLayer = layerToFit || fraClaimsLayer || currentLayer;
-                if (targetLayer) {
-                     map.fitBounds(targetLayer.getBounds(), {
-                         paddingTopLeft: getFitBoundsPadding(),
-                         animate: true 
-                     });
-                }
-            }, 300); // Match CSS transition duration
-        }
-    }
-
+    // NOTE: autoCollapseTopBar function removed as requested.
 
     function clearLayer(layerName = 'all') {
         if (layerName === 'current' || layerName === 'all') {
@@ -243,17 +221,27 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessageDiv.style.backgroundColor = isError ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)';
     }
 
-    // Function to show/hide the statistics sidebar
+    /**
+     * Toggles the visibility of the statistics sidebar and invalidates the map size.
+     * @param {boolean} show - True to show the sidebar, false to hide.
+     */
     function toggleStatsSidebar(show) {
-        document.body.classList.toggle('stats-open', show);
-        statsSidebar.classList.toggle('hidden', !show);
+        // Only show if a state is currently selected to ensure data is visible
+        const showSidebar = show && stateDropdown.value !== ""; 
+        document.body.classList.toggle('stats-open', showSidebar);
+        statsSidebar.classList.toggle('hidden', !showSidebar);
         setTimeout(() => map.invalidateSize(), 300);
     }
 
+    /**
+     * Renders the statistics content but no longer controls sidebar visibility.
+     * Sidebar visibility is now controlled by the collapse button.
+     */
     function renderStatistics(stateKey) {
         if (!stateKey) {
             statisticsPanel.innerHTML = '<p>Select a state to view statistics.</p>';
-            toggleStatsSidebar(false);
+            // Hide the sidebar if no state is selected, regardless of top bar state
+            toggleStatsSidebar(false); 
             return;
         }
 
@@ -282,8 +270,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <strong>% Claims disposed:</strong> ${stats.percent_disposed}<br>
             <strong>% Titles distributed:</strong> ${stats.percent_titles}
         `;
-
-        toggleStatsSidebar(true);
+        
+        // NO toggleStatsSidebar(true) here
     }
 
     function renderFraClaims(stateKey, districtName) {
@@ -316,15 +304,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const popupContent = `
                     <strong>FRA Claim/Title Details</strong><br>
                     <hr style="margin: 5px 0; border-color: #ddd;">
-                    1. Claim ID: ${props.id}<br>
-                    2. Claim/Title Type: <strong>${props.Claim_Type}</strong><br>
-                    3. Status: ${props.Status}<br>
-                    4. Name(s) of Holder(s): ${props.Name_Holders || 'N/A'}<br>
-                    5. Area (Hectares): ${props.Area_Hectares}<br>
-                    6. Title No.: ${props.Title_No}<br>
-                    7. Village/Gram Sabha: ${props.Village || 'N/A'}<br>
-                    8. Gram Panchayat: ${props.GP || 'N/A'}<br>
-                    9. Tehsil/Taluka: ${props.Tehsil || 'N/A'}
+                    1. **Claim ID**: ${props.id}<br>
+                    2. **Claim/Title Type**: <strong>${props.Claim_Type}</strong><br>
+                    3. **Status**: ${props.Status}<br>
+                    4. **Name(s) of Holder(s)**: ${props.Name_Holders || 'N/A'}<br>
+                    5. **Area (Hectares)**: ${props.Area_Hectares}<br>
+                    6. **Title No.**: ${props.Title_No}<br>
+                    7. **Village/Gram Sabha**: ${props.Village || 'N/A'}<br>
+                    8. **Gram Panchayat**: ${props.GP || 'N/A'}<br>
+                    9. **Tehsil/Taluka**: ${props.Tehsil || 'N/A'}
                 `;
                 layer.bindPopup(popupContent);
             }
@@ -346,8 +334,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateStatus(`Displaying ${filteredClaims.length} FRA claim polygons for ${districtName || stateName}.`, false);
         
-        // Pass the newly created layer to autoCollapseTopBar to ensure correct zoom
-        autoCollapseTopBar(fraClaimsLayer);
+        // Fit bounds to the new layer
+        map.fitBounds(fraClaimsLayer.getBounds(), {
+            paddingTopLeft: getFitBoundsPadding(),
+            maxZoom: 14 
+        });
     }
 
     function renderBoundaries(stateKey, districtName) {
@@ -376,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let targetBounds = null; // Will hold the bounds of the state OR selected district
 
                 if (districtName) {
-                    // FIX: Pre-calculate bounds for the *selected* district first
+                    // Pre-calculate bounds for the *selected* district first (Fix for zoom glitch)
                     const selectedFeature = data.features.find(f => 
                         f.properties && f.properties.district === districtName
                     );
@@ -385,7 +376,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         const tempLayer = L.geoJSON(selectedFeature);
                         targetBounds = tempLayer.getBounds();
                     } else {
-                        // Fallback if the selected district isn't found in the GeoJSON
                         console.warn(`District feature for ${districtName} not found.`);
                     }
                 }
@@ -413,8 +403,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 updateStatus(statusMessage);
-                // Call autoCollapseTopBar after the boundary layer is rendered and fitted
-                autoCollapseTopBar(currentLayer);
             })
             .catch(err => {
                 console.error(`Error loading file ${fileToLoad}:`, err);
@@ -478,12 +466,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Event Listeners ---
 
-    // Top Bar Collapse Toggle
+    // Top Bar Collapse Toggle (Now also controls the Statistics Sidebar)
     collapseButton.addEventListener('click', () => {
         const isCollapsed = topBar.classList.toggle('collapsed');
         collapseButton.setAttribute('aria-expanded', !isCollapsed);
         
-        // Invalidate map size and re-fit after the transition
+        // 1. Toggle Sidebar Visibility (only show if a state is selected)
+        // If the top bar is collapsing (isCollapsed is true), show the sidebar.
+        // If the top bar is expanding (isCollapsed is false), hide the sidebar.
+        toggleStatsSidebar(isCollapsed);
+
+        // 2. Invalidate map size and re-fit after the transition
         setTimeout(() => {
             map.invalidateSize();
             const layerToFit = fraClaimsLayer || currentLayer;
