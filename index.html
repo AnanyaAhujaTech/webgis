@@ -36,13 +36,11 @@
             <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 5px 0;">
 
             <div class="control-group radio-group">
-                <!-- DEFAULT: Boundaries -->
                 <input type="radio" id="boundaries-radio" name="layer-type" value="boundaries" checked>
                 <label for="boundaries-radio" style="display: inline;">State/District Boundaries</label>
             </div>
 
             <div class="control-group radio-group">
-                <!-- FRA Claims -->
                 <input type="radio" id="fra-claims-radio" name="layer-type" value="fra-claims">
                 <label for="fra-claims-radio" style="display: inline;">Areas claimed under FRA</label>
                 <div id="date-selector-group">
@@ -51,18 +49,11 @@
                 </div>
             </div>
             
-            <div class="control-group radio-group">
-                <!-- UPDATED: Simulated Forest Cover Layer -->
-                <input type="radio" id="forest-cover-radio" name="layer-type" value="forest-cover">
-                <label for="forest-cover-radio" style="display: inline;">Simulated Forest Cover</label>
-            </div>
-            
             <div id="status-message" class="status-message"></div>
         </div>
     </div>
     
     <div id="stats-sidebar" class="hidden">
-        <!-- Sidebar Toggle Button -->
         <button id="sidebar-toggle-button" aria-expanded="false" aria-controls="statistics-panel">
             <i class="fas fa-chevron-left"></i>
         </button>
