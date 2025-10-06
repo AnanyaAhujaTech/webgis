@@ -74,7 +74,8 @@ html, body {
 }
 
 #top-bar:not(.collapsed) #control-content {
-    max-height: 200px; /* Reduced expanded height */
+    /* INCREASED EXPANDED HEIGHT: From 200px to 250px */
+    max-height: 250px; 
     opacity: 1;
     margin-top: 5px; /* Reduced spacing */
     padding-bottom: 5px;
@@ -150,9 +151,9 @@ label {
     transition: padding-top 0.3s ease, margin-right 0.3s ease;
 }
 
-/* Adjusted to new expanded height */
+/* Adjusted to new expanded height: From 190px to 240px to match new content height + top-bar-header height */
 #top-bar:not(.collapsed) + #map { 
-    padding-top: 190px;
+    padding-top: 240px;
 }
 
 /* --- Statistics Sidebar Styling --- */
@@ -254,7 +255,7 @@ label {
 /* Responsive adjustment */
 @media (max-width: 768px) {
     #top-bar:not(.collapsed) + #map {
-        padding-top: 300px; /* Adjust for stacked content on small screens */
+        padding-top: 350px; /* Adjusted from 300px for stacked content on small screens */
     }
     #stats-sidebar {
         width: 100%;
