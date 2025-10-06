@@ -102,7 +102,7 @@ html, body {
 
 #top-bar:not(.collapsed) #control-content {
     /* MODIFIED: Increased max-height for better spacing (300px) */
-    max-height: 300px; 
+    max-height: 400px; 
     opacity: 1;
     margin-top: 5px; 
     padding-bottom: 5px;
@@ -199,7 +199,7 @@ label {
 
 /* MODIFIED: Adjusted map padding to match new expanded height (300px) */
 #top-bar:not(.collapsed) + #map { 
-    padding-top: 300px;
+    padding-top: 400px;
 }
 
 /* --- Statistics Sidebar Styling --- */
