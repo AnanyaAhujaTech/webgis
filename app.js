@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentLayer = null; 
     let fraClaimsLayer = null; 
     let thematicLayer = null; 
-    let fraClaimsGeoJSON = {}; // Will hold the dynamically generated claims
+    let fraClaimsGeoJSON = {}; 
 
     // --- Configuration & Data ---
     const stateData = {
@@ -122,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     let seed = 1;
     function pseudoRandom() {
-        // Simple linear congruential generator (LCG)
         seed = (seed * 9301 + 49297) % 233280;
         return seed / 233280;
     }
@@ -136,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
      * Generates a square GeoJSON polygon feature centered at [lat, lon].
      */
     function createDummySquarePolygon(lat, lon, state, district, id, claimTypeOverride = null) {
-        // Base size for the claim area (in degrees, slightly smaller than old)
         const size = 0.005; 
         const halfSize = size / 2;
         
@@ -148,23 +146,18 @@ document.addEventListener('DOMContentLoaded', () => {
             [lon - halfSize, lat - halfSize]  // Close the loop
         ];
         
-        // Use a random value to determine if it's Individual or Community, unless overridden
         const claimType = claimTypeOverride || (pseudoRandom() < 0.6 ? 'Individual' : 'Community');
-        
-        const areaHectares = (pseudoRandom() * (10.0 - 0.5) + 0.5).toFixed(2); // 0.5 to 10.0 hectares
-        
-        // Use a random village name for the location
+        const areaHectares = (pseudoRandom() * (10.0 - 0.5) + 0.5).toFixed(2);
         const randomVillageName = getRandomElement(villageNamesMP);
         
         let nameHolder;
         if (claimType === 'Individual') {
             nameHolder = getRandomElement(holderNames);
         } else {
-            // Include random village name for better context in community claims
             nameHolder = `Gram Sabha - ${randomVillageName} Village Cluster ${Math.floor(id / 5) + 1}`;
         }
         
-        const status = (pseudoRandom() < 0.7) ? 'Approved' : 'Claimed/Pending'; // 70% chance of being approved for diversity
+        const status = (pseudoRandom() < 0.7) ? 'Approved' : 'Claimed/Pending';
 
         return {
             "type": "Feature",
@@ -172,56 +165,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 "id": id,
                 "State": state,
                 "District": district,
-                "Claim_Type": claimType, // Individual (Yellow) or Community (Orange)
+                "Claim_Type": claimType, 
                 "Status": status,
                 "Area_Hectares": `${areaHectares}`,
                 "Title_No": status === 'Approved' ? `TN-${id}` : 'N/A',
                 "Name_Holders": nameHolder,
                 "Village": randomVillageName, 
-                "GP": `Gram Panchayat ${Math.floor(id / 10) + 1}`, // Kept in properties for consistency, just removed from popup
-                "Tehsil": `Tehsil ${Math.floor(id / 20) + 1}` // Kept in properties for consistency, just removed from popup
+                "GP": `Gram Panchayat ${Math.floor(id / 10) + 1}`,
+                "Tehsil": `Tehsil ${Math.floor(id / 20) + 1}`
             },
             "geometry": {
                 "type": "Polygon",
-                "coordinates": [vertices] // GeoJSON expects an array of rings
+                "coordinates": [vertices] 
             }
         };
     }
 
     /**
-     * Generates claims for a single district with a specific count.
+     * NEW HELPER: Generates a single random claim with a specified spread.
      */
-    function generateDistrictClaims(district, countIndividual, countCommunity, startId, baseId) {
+    function generateRandomClaim(lat, lon, spread, state, district, id, claimTypeOverride = null) {
+         return createDummySquarePolygon(
+            lat + (pseudoRandom() * spread - spread / 2),
+            lon + (pseudoRandom() * spread - spread / 2),
+            state, 
+            district, 
+            id, 
+            claimTypeOverride
+        );
+    }
+    
+    /**
+     * Generates claims for a single district with a specific count and spread.
+     */
+    function generateDistrictClaims(district, countIndividual, countCommunity, baseId, spread) {
         const claims = [];
-        let id = startId;
+        let id = 0; // Relative ID starting from 0 for this block
         const center = mpDistrictCoords[district];
         if (!center) return claims;
 
         const [lat, lon] = center;
-        const spread = 0.3; // Tighter spread for better containment
         
         // Generate Individual Claims
         for (let i = 0; i < countIndividual; i++) {
-            claims.push(createDummySquarePolygon(
-                lat + (pseudoRandom() * spread - spread / 2),
-                lon + (pseudoRandom() * spread - spread / 2),
-                'Madhya Pradesh', 
-                district, 
-                baseId + id++, 
-                'Individual'
-            ));
+            claims.push(generateRandomClaim(lat, lon, spread, 'Madhya Pradesh', district, baseId + id++, 'Individual'));
         }
 
         // Generate Community Claims
         for (let i = 0; i < countCommunity; i++) {
-            claims.push(createDummySquarePolygon(
-                lat + (pseudoRandom() * spread - spread / 2),
-                lon + (pseudoRandom() * spread - spread / 2),
-                'Madhya Pradesh', 
-                district, 
-                baseId + id++, 
-                'Community'
-            ));
+            claims.push(generateRandomClaim(lat, lon, spread, 'Madhya Pradesh', district, baseId + id++, 'Community'));
         }
         return claims;
     }
@@ -234,13 +226,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let id = startId;
         
         const excludedDistrict = 'Burhanpur';
+        const generalSpread = 0.3; // Default spread for all other districts
 
         districts.forEach(district => {
             if (district === excludedDistrict) return;
 
             // Generate 3 Individual Claims and 2 Community Claims per other District
-            claims.push(...generateDistrictClaims(district, 3, 2, id, 1000)); 
-            id += 5;
+            const districtClaims = generateDistrictClaims(district, 3, 2, id, generalSpread); 
+            claims.push(...districtClaims);
+            id += districtClaims.length;
         });
         return claims;
     }
@@ -253,41 +247,18 @@ document.addEventListener('DOMContentLoaded', () => {
         seed = dateSeed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) + 1;
         
         let startIdCounter = 101;
-        const burhanpurCenterLat = 21.3;
-        const burhanpurCenterLon = 76.2;
-        const burhanpurDistrictName = 'Burhanpur';
         
-        // Burhanpur claims (20 total) - Adjusted coordinates for tighter placement
-        const burhanpurClaims = [
-            // Individual Claims (IDs 103-110, excluding 101 and 102)
-            createDummySquarePolygon(burhanpurCenterLat + 0.08, burhanpurCenterLon + 0.05, 'Madhya Pradesh', burhanpurDistrictName, 103, 'Individual'),
-            createDummySquarePolygon(burhanpurCenterLat + 0.02, burhanpurCenterLon + 0.1, 'Madhya Pradesh', burhanpurDistrictName, 104, 'Individual'),
-            createDummySquarePolygon(burhanpurCenterLat - 0.05, burhanpurCenterLon - 0.02, 'Madhya Pradesh', burhanpurDistrictName, 105, 'Individual'),
-            createDummySquarePolygon(burhanpurCenterLat + 0.0, burhanpurCenterLon + 0.0, 'Madhya Pradesh', burhanpurDistrictName, 106, 'Individual'),
-            createDummySquarePolygon(burhanpurCenterLat + 0.04, burhanpurCenterLon + 0.08, 'Madhya Pradesh', burhanpurDistrictName, 107, 'Individual'), 
-            createDummySquarePolygon(burhanpurCenterLat - 0.08, burhanpurCenterLon + 0.01, 'Madhya Pradesh', burhanpurDistrictName, 108, 'Individual'),
-            createDummySquarePolygon(burhanpurCenterLat + 0.06, burhanpurCenterLon - 0.05, 'Madhya Pradesh', burhanpurDistrictName, 109, 'Individual'),
-            createDummySquarePolygon(burhanpurCenterLat - 0.1, burhanpurCenterLon - 0.08, 'Madhya Pradesh', burhanpurDistrictName, 110, 'Individual'),
-            
-            // Community Claims (IDs 111-120, excluding 112)
-            createDummySquarePolygon(burhanpurCenterLat + 0.06, burhanpurCenterLon + 0.06, 'Madhya Pradesh', burhanpurDistrictName, 111, 'Community'),
-            createDummySquarePolygon(burhanpurCenterLat - 0.08, burhanpurCenterLon - 0.1, 'Madhya Pradesh', burhanpurDistrictName, 113, 'Community'),
-            createDummySquarePolygon(burhanpurCenterLat + 0.01, burhanpurCenterLon - 0.1, 'Madhya Pradesh', burhanpurDistrictName, 114, 'Community'),
-            createDummySquarePolygon(burhanpurCenterLat + 0.0, burhanpurCenterLon + 0.09, 'Madhya Pradesh', burhanpurDistrictName, 115, 'Community'),
-            createDummySquarePolygon(burhanpurCenterLat - 0.08, burhanpurCenterLon + 0.04, 'Madhya Pradesh', burhanpurDistrictName, 116, 'Community'),
-            createDummySquarePolygon(burhanpurCenterLat + 0.03, burhanpurCenterLon - 0.01, 'Madhya Pradesh', burhanpurDistrictName, 117, 'Community'),
-            createDummySquarePolygon(burhanpurCenterLat - 0.1, burhanpurCenterLon + 0.1, 'Madhya Pradesh', burhanpurDistrictName, 118, 'Community'),
-            createDummySquarePolygon(burhanpurCenterLat + 0.09, burhanpurCenterLon + 0.0, 'Madhya Pradesh', burhanpurDistrictName, 119, 'Community'),
-            createDummySquarePolygon(burhanpurCenterLat - 0.01, burhanpurCenterLon - 0.06, 'Madhya Pradesh', burhanpurDistrictName, 120, 'Community'),
-            
-            // Fillers to reach 20 total
-            createDummySquarePolygon(burhanpurCenterLat + 0.05, burhanpurCenterLon - 0.02, 'Madhya Pradesh', burhanpurDistrictName, 121, 'Individual'),
-            createDummySquarePolygon(burhanpurCenterLat - 0.02, burhanpurCenterLon + 0.03, 'Madhya Pradesh', burhanpurDistrictName, 122, 'Community'),
-            createDummySquarePolygon(burhanpurCenterLat + 0.09, burhanpurCenterLon + 0.09, 'Madhya Pradesh', burhanpurDistrictName, 123, 'Community'),
-        ];
+        // MODIFIED: Generate 15 random claims for Burhanpur with a very tight spread
+        const burhanpurClaims = generateDistrictClaims(
+            'Burhanpur', 
+            9, // 9 Individual
+            6, // 6 Community
+            startIdCounter, 
+            0.15 // Very tight spread for better containment within the displayed boundary
+        );
+        startIdCounter += burhanpurClaims.length; // 101 + 15 = 116
 
-        startIdCounter = 124; // Update counter past manual block
-
+        // Generate scattered claims for all other districts
         const mpScatteredClaims = generateScatteredClaims(stateData['madhya-pradesh'].districts, startIdCounter);
         startIdCounter += mpScatteredClaims.length;
 
@@ -336,24 +307,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const statisticsPanel = document.getElementById('statistics-panel');
     const fraClaimsRadio = document.getElementById('fra-claims-radio');
     const boundariesRadio = document.getElementById('boundaries-radio'); 
-    const cropLandRadio = document.getElementById('crop-land-radio'); 
-    const waterBodiesRadio = document.getElementById('water-bodies-radio'); 
-    const homesteadsRadio = document.getElementById('homesteads-radio'); 
-    const forestsRadio = document.getElementById('forests-radio'); 
     const statsSidebar = document.getElementById('stats-sidebar');
     const sidebarToggleButton = document.getElementById('sidebar-toggle-button'); 
     const adminViewRadio = document.getElementById('admin-view-radio');
     const satViewRadio = document.getElementById('sat-view-radio');
-    const claimDateInput = document.getElementById('claim-date'); // NEW: Date input element
+    const claimDateInput = document.getElementById('claim-date'); 
+    // NEW: Dummy filter elements
+    const villageDropdown = document.getElementById('village-dropdown');
+    const tehsilDropdown = document.getElementById('tehsil-dropdown');
+    const tribalGroupDropdown = document.getElementById('tribal-group-dropdown');
+
 
     // --- Core Functions ---
 
-    /**
-     * Calculates the dynamic top padding for Leaflet's fitBounds function.
-     */
     function getFitBoundsPadding() {
         const sidebarWidth = statsSidebar.classList.contains('hidden') ? 0 : 260;
-        return [topBar.offsetHeight + 10, sidebarWidth]; // [Y offset, X offset]
+        return [topBar.offsetHeight + 10, sidebarWidth]; 
     }
     
 
@@ -370,7 +339,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 fraClaimsLayer = null;
             }
         }
-        // Clear Thematic Layer
         if (layerName === 'thematic' || layerName === 'all') {
             if (thematicLayer) {
                 overlayGroup.removeLayer(thematicLayer); 
@@ -385,13 +353,9 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessageDiv.style.backgroundColor = isError ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)';
     }
 
-    /**
-     * Toggles the visibility of the statistics sidebar and invalidates the map size.
-     */
     function toggleStatsSidebar(show) {
         const stateSelected = stateDropdown.value !== "";
         const districtSelected = districtDropdown.value !== "";
-        
         const showSidebar = show && stateSelected && !districtSelected; 
 
         document.body.classList.toggle('stats-open', showSidebar);
@@ -404,9 +368,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => map.invalidateSize(), 300);
     }
 
-    /**
-     * Renders the statistics content.
-     */
     function renderStatistics(stateKey) {
         if (!stateKey) {
             statisticsPanel.innerHTML = '<p>Select a state to view statistics.</p>';
@@ -447,7 +408,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const stateName = stateData[stateKey].name;
 
-        // Filter claims based on selection (uses the globally updated fraClaimsGeoJSON)
         const filteredClaims = fraClaimsGeoJSON.features.filter(f => {
             const isStateMatch = f.properties.State === stateName;
             const isDistrictMatch = districtName ? f.properties.District === districtName : true;
@@ -467,7 +427,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const onEachFeature = (feature, layer) => {
             if (feature.properties) {
                 const props = feature.properties;
-                // Popup content with GP and Tehsil removed
                 const popupContent = `
                     <strong>FRA Claim/Title Details</strong>
                     <hr style="margin: 5px 0; border-color: #ddd;">
@@ -502,15 +461,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         overlayGroup.addLayer(fraClaimsLayer);
 
-        updateStatus(`Displaying ${filteredClaims.length} FRA claim polygons for ${districtName || stateName}.`, false);
+        updateStatus(`Displaying ${filteredClaims.length} FRA claim polygons for ${districtName || stateName}. (Generated based on date: ${claimDateInput.value})`, false);
         
-        // Fit bounds to the new layer
         map.fitBounds(fraClaimsLayer.getBounds(), {
             paddingTopLeft: getFitBoundsPadding(),
             maxZoom: 14 
         });
 
-        // Add event listener for the DSS button after the layer is added
         fraClaimsLayer.on('popupopen', (e) => {
             const popup = e.popup.getElement();
             const dssButton = popup.querySelector('.dss-button button');
@@ -594,14 +551,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    /**
-     * Renders thematic layers (Agricultural Land, Water Bodies, Homesteads, Forests).
-     */
     function renderThematicLayer(stateKey, layerType) {
         clearLayer('fra-claims');
         clearLayer('thematic');
 
-        // Rule: Only allow thematic layers for Madhya Pradesh
         if (stateKey !== 'madhya-pradesh') {
             updateStatus('Thematic layers (Crop Land, Water, Homesteads, Forests) are only available for **Madhya Pradesh**.', true);
             boundariesRadio.checked = true;
@@ -695,9 +648,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    /**
-     * Function to switch between administrative and satellite base layers.
-     */
     function switchBaseLayer(layerType) {
         if (layerType === 'satellite') {
             if (map.hasLayer(administrativeBaseLayer)) {
@@ -718,7 +668,6 @@ document.addEventListener('DOMContentLoaded', () => {
             overlayGroup.addTo(map);
             updateStatus('Switched to Administrative View. Dynamic layers visible.');
 
-            // Re-render current selection
             const stateKey = stateDropdown.value;
             if (stateKey) {
                 const layerType = document.querySelector('input[name="layer-type"]:checked').value;
@@ -742,6 +691,14 @@ document.addEventListener('DOMContentLoaded', () => {
         clearLayer(); 
         districtDropdown.innerHTML = '<option value="" disabled selected>-- Select a District --</option>';
         districtDropdown.disabled = true;
+
+        // Reset dummy filters on state change
+        villageDropdown.value = "";
+        tehsilDropdown.value = "";
+        tribalGroupDropdown.value = "";
+        villageDropdown.disabled = true;
+        tehsilDropdown.disabled = true;
+        tribalGroupDropdown.disabled = true;
 
         if (!stateKey) {
             updateStatus('Please select a State to begin.');
@@ -777,6 +734,11 @@ document.addEventListener('DOMContentLoaded', () => {
             handleStateSelection(stateKey);
             return;
         }
+
+        // Enable dummy filters when a district is selected (for demonstration)
+        villageDropdown.disabled = false;
+        tehsilDropdown.disabled = false;
+        tribalGroupDropdown.disabled = false;
         
         if (adminViewRadio.checked) {
             const layerType = document.querySelector('input[name="layer-type"]:checked').value;
@@ -807,25 +769,25 @@ document.addEventListener('DOMContentLoaded', () => {
         stateDropdown.appendChild(option);
     });
 
-    // 3. Date Change Listener (NEW)
+    // 3. Date Change Listener
     claimDateInput.addEventListener('change', (event) => {
         const dateValue = event.target.value;
         const stateKey = stateDropdown.value;
         const districtName = districtDropdown.value;
 
+        updateStatus(`Regenerating claims based on new date (${dateValue})...`);
+        generateAllFraClaims(dateValue);
+
         if (stateKey && fraClaimsRadio.checked) {
-            updateStatus(`Regenerating claims based on new date (${dateValue})...`);
-            generateAllFraClaims(dateValue);
             renderFraClaims(stateKey, districtName || null);
         } else if (stateKey) {
-            updateStatus(`Date updated to ${dateValue}. Switch to 'Areas claimed under FRA' to see changes.`);
+            updateStatus(`Date updated to ${dateValue}. Switch to 'Areas claimed under FRA' to see generated claims.`);
         } else {
-            generateAllFraClaims(dateValue); // Update global data even without a state selected
             updateStatus(`Date updated to ${dateValue}. Please select a state.`);
         }
     });
 
-    // 4. Other Event Listeners (Unchanged logic)
+    // 4. Other Event Listeners (Including dummy filter listeners for future use)
     collapseButton.addEventListener('click', () => {
         const isCollapsed = topBar.classList.toggle('collapsed');
         collapseButton.setAttribute('aria-expanded', !isCollapsed);
@@ -898,6 +860,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderFraClaims(stateKey, districtDropdown.value || null);
             }
         });
+    });
+
+    // Dummy listeners for the new filter dropdowns (for completeness)
+    villageDropdown.addEventListener('change', () => {
+        updateStatus(`Placeholder: Filtering by Village: ${villageDropdown.value}. Actual filtering is not yet implemented.`, false);
+    });
+    tehsilDropdown.addEventListener('change', () => {
+        updateStatus(`Placeholder: Filtering by Tehsil: ${tehsilDropdown.value}. Actual filtering is not yet implemented.`, false);
+    });
+    tribalGroupDropdown.addEventListener('change', () => {
+        updateStatus(`Placeholder: Filtering by Tribal Group: ${tribalGroupDropdown.value}. Actual filtering is not yet implemented.`, false);
     });
     
     updateStatus('Welcome to the FRA Atlas. Select a state to begin.');
