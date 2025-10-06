@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 style = { color: '#FFD700', fillColor: '#FFD700', fillOpacity: 0.5, weight: 1.5 };
                 break;
             case 'water-bodies':
-                fileName = 'blue_water_final.geojson';
+                fileName = 'blue_finally.geojson';
                 layerName = 'Water Bodies';
                 style = { color: '#00BFFF', fillColor: '#00BFFF', fillOpacity: 0.8, weight: 1.5 };
                 break;
