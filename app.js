@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "Nitin Jhangra", "Pankaj Choudhari", "Pooja Tripathi", "Preet Bajpayee"
     ];
 
-    // NEW: List of village names
+    // List of village names
     const villageNamesMP = [
         "Tikamgarh", "Lalitpur", "Talbehat", "Prithvipur", "Mauranipur", "Mahoba", "Panna", 
         "Karrera", "Datia", "Maudaha", "Rath", "Banda", "Hamirpur", "Kalpi", "Auraiya", 
@@ -167,78 +167,113 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Function to generate scattered claims across MP districts
+    /**
+     * Generates claims for a single district with a specific count.
+     */
+    function generateDistrictClaims(district, countIndividual, countCommunity, startId, baseId) {
+        const claims = [];
+        let id = startId;
+        const center = mpDistrictCoords[district];
+        if (!center) return claims;
+
+        const [lat, lon] = center;
+        const spread = district === 'Burhanpur' ? 0.3 : 0.5; // Slightly tighter spread for Burhanpur
+        
+        // Generate Individual Claims
+        for (let i = 0; i < countIndividual; i++) {
+            claims.push(createDummySquarePolygon(
+                lat + (Math.random() * spread - spread / 2),
+                lon + (Math.random() * spread - spread / 2),
+                'Madhya Pradesh', 
+                district, 
+                baseId + id++, 
+                'Individual'
+            ));
+        }
+
+        // Generate Community Claims
+        for (let i = 0; i < countCommunity; i++) {
+            claims.push(createDummySquarePolygon(
+                lat + (Math.random() * spread - spread / 2),
+                lon + (Math.random() * spread - spread / 2),
+                'Madhya Pradesh', 
+                district, 
+                baseId + id++, 
+                'Community'
+            ));
+        }
+        return claims;
+    }
+
+    /**
+     * Generates scattered claims across all MP districts listed in stateData, excluding Burhanpur.
+     */
     function generateScatteredClaims(districts, startId) {
         const claims = [];
         let id = startId;
         
-        // Iterate through all MP districts
+        const excludedDistrict = 'Burhanpur';
+
         districts.forEach(district => {
-            const center = mpDistrictCoords[district];
-            if (!center) return; // Skip if coordinates are not defined
+            if (district === excludedDistrict) return;
 
-            const [lat, lon] = center;
-            const spread = 0.5; // Degree spread for realism
-            
-            // Generate 3 Individual Claims per District
-            for (let i = 0; i < 3; i++) {
-                claims.push(createDummySquarePolygon(
-                    lat + (Math.random() * spread - spread / 2),
-                    lon + (Math.random() * spread - spread / 2),
-                    'Madhya Pradesh', 
-                    district, 
-                    id++, 
-                    'Individual'
-                ));
-            }
-
-            // Generate 2 Community Claims per District
-            for (let i = 0; i < 2; i++) {
-                claims.push(createDummySquarePolygon(
-                    lat + (Math.random() * spread - spread / 2),
-                    lon + (Math.random() * spread - spread / 2),
-                    'Madhya Pradesh', 
-                    district, 
-                    id++, 
-                    'Community'
-                ));
-            }
+            // Generate 3 Individual Claims and 2 Community Claims per other District
+            claims.push(...generateDistrictClaims(district, 3, 2, id, 1000)); 
+            id += 5;
         });
         return claims;
     }
 
     // --- FRA Claims Data ---
+    // Start ID for scattered claims will be around 1000, leaving 101-999 for Burhanpur and other blocks
+    let startIdCounter = 101;
+
+    const burhanpurClaims = [
+        // FIXED: 10 Individual + 10 Community Claims for Burhanpur
+        ...generateDistrictClaims('Burhanpur', 10, 10, 0, startIdCounter),
+    ];
+    startIdCounter += 20;
+
+    const mpScatteredClaims = generateScatteredClaims(stateData['madhya-pradesh'].districts, startIdCounter);
+    startIdCounter += mpScatteredClaims.length;
+
+    // Remaining non-MP claims use a fixed base ID (e.g., 3000 series)
+    const nonMpClaimsBaseId = 3000;
+
     const fraClaimsGeoJSON = {
         "type": "FeatureCollection",
         "features": [
-            // Scattered claims across all MP districts listed in stateData
-            ...generateScatteredClaims(stateData['madhya-pradesh'].districts, 101),
+            // Burhanpur claims (now 20 total)
+            ...burhanpurClaims,
+            
+            // Scattered claims across the rest of MP
+            ...mpScatteredClaims,
             
             // Telangana - Adilabad (4 Polygons)
-            createDummySquarePolygon(19.40, 78.40, 'Telangana', 'Adilabad', 301),
-            createDummySquarePolygon(19.70, 78.65, 'Telangana', 'Adilabad', 302),
-            createDummySquarePolygon(19.55, 78.90, 'Telangana', 'Adilabad', 303),
-            createDummySquarePolygon(19.85, 78.75, 'Telangana', 'Adilabad', 304),
+            createDummySquarePolygon(19.40, 78.40, 'Telangana', 'Adilabad', nonMpClaimsBaseId + 1),
+            createDummySquarePolygon(19.70, 78.65, 'Telangana', 'Adilabad', nonMpClaimsBaseId + 2),
+            createDummySquarePolygon(19.55, 78.90, 'Telangana', 'Adilabad', nonMpClaimsBaseId + 3),
+            createDummySquarePolygon(19.85, 78.75, 'Telangana', 'Adilabad', nonMpClaimsBaseId + 4),
 
             // Tripura - North Tripura (6 Polygons)
-            createDummySquarePolygon(24.30, 91.80, 'Tripura', 'North Tripura', 401),
-            createDummySquarePolygon(24.45, 92.10, 'Tripura', 'North Tripura', 402),
-            createDummySquarePolygon(24.20, 92.25, 'Tripura', 'North Tripura', 403),
-            createDummySquarePolygon(24.50, 91.95, 'Tripura', 'North Tripura', 404),
-            createDummySquarePolygon(24.35, 92.30, 'Tripura', 'North Tripura', 405),
-            createDummySquarePolygon(24.55, 92.15, 'Tripura', 'North Tripura', 406),
+            createDummySquarePolygon(24.30, 91.80, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 10),
+            createDummySquarePolygon(24.45, 92.10, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 11),
+            createDummySquarePolygon(24.20, 92.25, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 12),
+            createDummySquarePolygon(24.50, 91.95, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 13),
+            createDummySquarePolygon(24.35, 92.30, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 14),
+            createDummySquarePolygon(24.55, 92.15, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 15),
 
             // Odisha - Bhadrak (7 Polygons)
-            createDummySquarePolygon(21.10, 86.60, 'Odisha', 'Bhadrak', 501),
-            createDummySquarePolygon(20.95, 86.85, 'Odisha', 'Bhadrak', 502),
-            createDummySquarePolygon(21.25, 87.00, 'Odisha', 'Bhadrak', 503),
-            createDummySquarePolygon(21.05, 87.20, 'Odisha', 'Bhadrak', 504),
-            createDummySquarePolygon(21.30, 86.75, 'Odisha', 'Bhadrak', 505),
-            createDummySquarePolygon(20.90, 87.05, 'Odisha', 'Bhadrak', 506),
-            createDummySquarePolygon(21.15, 86.95, 'Odisha', 'Bhadrak', 507)
+            createDummySquarePolygon(21.10, 86.60, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 20),
+            createDummySquarePolygon(20.95, 86.85, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 21),
+            createDummySquarePolygon(21.25, 87.00, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 22),
+            createDummySquarePolygon(21.05, 87.20, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 23),
+            createDummySquarePolygon(21.30, 86.75, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 24),
+            createDummySquarePolygon(20.90, 87.05, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 25),
+            createDummySquarePolygon(21.15, 86.95, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 26)
         ]
     };
-
+    
     // --- DOM Elements ---
     const topBar = document.getElementById('top-bar');
     const collapseButton = document.getElementById('collapse-button');
@@ -541,7 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 baseStyle = { color: '#FF4500', fillColor: '#FF4500', fillOpacity: 0.7, weight: 1.5 };
                 break;
             case 'forests':
-                // FIXED: Load two files in the specified order (land_use first)
+                // Load two files in the specified order (land_use first)
                 fileNames = ['land_use.geojson', 'green_finally.geojson']; 
                 layerName = 'Forest Cover & Land Use';
                 baseStyle = { color: '#006400', fillColor: '#38761d', fillOpacity: 0.6, weight: 1.5 }; 
@@ -579,7 +614,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             return baseStyle; 
                         },
                         onEachFeature: (feature, layer) => {
-                            layer.bindPopup(`<strong>Layer:</strong> ${layerName} (File ${index + 1})`);
+                            // Simple popup showing just the layer type name
+                            const fileTag = fileNames.length > 1 ? ` (File: ${fileNames[index]})` : '';
+                            layer.bindPopup(`<strong>Layer:</strong> ${layerName}${fileTag}`);
                         }
                     };
 
