@@ -94,15 +94,38 @@ html, body {
     opacity: 0;
     overflow: hidden;
     transition: max-height 0.3s ease, opacity 0.3s ease;
+    /* NEW: Use CSS Grid for horizontal arrangement in expanded view */
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Two columns for dropdowns */
+    gap: 10px; /* Spacing between grid items */
 }
 
 #top-bar:not(.collapsed) #control-content {
-    /* MODIFIED: Increased max-height to fit new filters */
-    max-height: 400px; 
+    /* MODIFIED: Reduced max-height due to horizontal arrangement */
+    max-height: 250px; 
     opacity: 1;
-    margin-top: 5px; /* Reduced spacing */
+    margin-top: 5px; 
     padding-bottom: 5px;
 }
+
+/* Ensure select elements span their full grid cell */
+#control-content select {
+    width: 100%;
+}
+
+/* Force some elements (HR and radio groups) to span both columns */
+#control-content hr, 
+#control-content .control-group:nth-child(6), /* HR */
+#control-content .control-group:nth-child(7), /* Boundaries */
+#control-content .control-group:nth-child(8), /* FRA Claims */
+#control-content .control-group:nth-child(9), /* Crop Land */
+#control-content .control-group:nth-child(10), /* Water Bodies */
+#control-content .control-group:nth-child(11), /* Homesteads */
+#control-content .control-group:nth-child(12), /* Forests */
+#control-content #status-message {
+    grid-column: 1 / span 2;
+}
+
 
 .control-group {
     margin-bottom: 5px; /* Reduced vertical spacing */
@@ -137,7 +160,7 @@ label {
     font-size: 0.9em;
 }
 
-/* Dropdown and Date input styling (Updated selector for new dropdowns) */
+/* Dropdown and Date input styling */
 #state-dropdown, #district-dropdown, #claim-date, #village-dropdown, #tehsil-dropdown, #tribal-group-dropdown {
     padding: 6px; /* Reduced padding */
     border-radius: 4px;
@@ -174,9 +197,9 @@ label {
     transition: padding-top 0.3s ease, margin-right 0.3s ease;
 }
 
-/* MODIFIED: Adjusted map padding to match new expanded height */
+/* MODIFIED: Adjusted map padding to match new, more compact expanded height (250px) */
 #top-bar:not(.collapsed) + #map { 
-    padding-top: 400px;
+    padding-top: 250px;
 }
 
 /* --- Statistics Sidebar Styling --- */
@@ -275,9 +298,23 @@ label {
     width: calc(100% - 260px);
 }
 
-/* Responsive adjustment */
+/* Responsive adjustment: Revert to single column for small screens */
 @media (max-width: 768px) {
-    /* MODIFIED: Increased padding top for small screens to accommodate all controls */
+    #control-content {
+        grid-template-columns: 1fr; /* Single column on mobile */
+        gap: 5px;
+    }
+    
+    /* All elements span full width on mobile */
+    #control-content > * {
+        grid-column: 1 / span 1 !important; 
+    }
+    
+    /* Increase height again for stacking on small screens */
+    #top-bar:not(.collapsed) #control-content {
+        max-height: 500px;
+    }
+    
     #top-bar:not(.collapsed) + #map {
         padding-top: 500px; 
     }
