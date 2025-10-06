@@ -334,6 +334,9 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * NEW: Renders thematic layers (Agricultural Land, Water Bodies, Homesteads).
      */
+/**
+     * NEW: Renders thematic layers (Agricultural Land, Water Bodies, Homesteads).
+     */
     function renderThematicLayer(stateKey, layerType) {
         clearLayer('fra-claims');
         clearLayer('thematic');
@@ -358,14 +361,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 style = { color: '#FFD700', fillColor: '#FFD700', fillOpacity: 0.5, weight: 1.5 };
                 break;
             case 'water-bodies':
-                fileName = 'blue_finally.geojson';
+                // FIX APPLIED: Using 'blue_finally.geojson'
+                fileName = 'blue_finally.geojson'; 
                 layerName = 'Water Bodies';
                 style = { color: '#00BFFF', fillColor: '#00BFFF', fillOpacity: 0.8, weight: 1.5 };
                 break;
             case 'homesteads':
+                // FIX APPLIED: Using 'red_finally.geojson'
                 fileName = 'red_finally.geojson';
                 layerName = 'Homesteads';
-                style = { color: '#FF4500', fillColor: '#FF4500', fillOpacity: 0.8, weight: 1.5 };
+                style = { color: '#FF4500', fillColor: '#FF4500', fillOpacity: 0.7, weight: 1.5 };
                 break;
             default:
                 return;
@@ -403,7 +408,8 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(err => {
                 console.error(`Error loading file ${fileName}:`, err);
-                updateStatus(`Could not load ${layerName} file. Check the console.`, true);
+                // The most common reason for this error is a file path mismatch or the file not being present.
+                updateStatus(`Could not load ${layerName} file. Please ensure the file is named '${fileName}' and is in the correct directory. Check the console for details.`, true);
             });
     }
 
