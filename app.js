@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 style = { color: '#00BFFF', fillColor: '#00BFFF', fillOpacity: 0.8, weight: 1.5 };
                 break;
             case 'homesteads':
-                fileName = 'red_final.geojson';
+                fileName = 'red_finally.geojson';
                 layerName = 'Homesteads';
                 style = { color: '#FF4500', fillColor: '#FF4500', fillOpacity: 0.7, weight: 1.5 };
                 break;
