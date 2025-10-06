@@ -1,296 +1,302 @@
 html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px; /* Base font size reduction */
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; /* Base font size reduction */
 }
 
 /* Top Bar Styling - Thinner, Centered Title */
 #top-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background-color: #228b22; /* Restored green background */
-    color: #fff;
-    padding: 5px 60px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    z-index: 1000;
-    overflow-y: auto;
-    transition: height 0.3s ease, padding 0.3s ease;
-    box-sizing: border-box;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #228b22; /* Forest Green */
+    color: #fff;
+    padding: 5px 60px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    z-index: 1000;
+    overflow-y: auto;
+    transition: height 0.3s ease, padding 0.3s ease;
+    box-sizing: border-box;
 }
 
 #top-bar.collapsed {
-    height: 38px; /* Thinner height for the title bar */
-    padding-top: 7px;
-    padding-bottom: 5px;
-}
-
-#top-bar-header {
-    display: flex;
-    justify-content: center; /* Center the title */
-    align-items: center;
-    position: relative;
-    height: 100%; 
-}
-
-#top-bar h1 {
-    margin: 0;
-    color: #fff;
-    font-size: 1.3rem; /* Smaller font size */
-    text-align: center;
-}
-
-#collapse-button {
-    position: absolute;
-    right: 60px; 
-    top: 50%;
-    transform: translateY(-50%); 
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 1.2rem; /* Smaller icon */
-    cursor: pointer;
-    transition: transform 0.3s ease;
-}
-
-#top-bar.collapsed #collapse-button i {
-    transform: rotate(180deg);
-}
-
-#control-content {
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease, opacity 0.3s ease;
-}
-
-#top-bar:not(.collapsed) #control-content {
-    /* MAX HEIGHT: Adjusted to 310px */
-    max-height: 310px; 
-    opacity: 1;
-    margin-top: 5px; /* Reduced spacing */
-    padding-bottom: 5px;
-}
-
-.control-group {
-    margin-bottom: 5px; /* Reduced vertical spacing */
-}
-
-/* FIX: Ensure dropdown groups are laid out vertically for label and input/select */
-.control-group:not(.radio-group) {
-    display: flex;
-    flex-direction: column; /* Stacks label on top of input/select */
-    width: 300px; /* Constrains width for better layout */
-    max-width: 100%;
-}
-
-.radio-group {
-    display: flex;
-    align-items: center;
-    font-size: 0.9em;
-}
-
-.radio-group input[type="radio"] {
-    margin-right: 5px;
-}
-
-/* New style for the top-level map view radio group to ensure proper spacing */
-.map-view-select {
-    margin-bottom: 10px;
+    height: 38px; /* Thinner height for the title bar */
+    padding-top: 7px;
     padding-bottom: 5px;
 }
 
+#top-bar-header {
+    display: flex;
+    justify-content: center; /* Center the title */
+    align-items: center;
+    position: relative;
+    /* FIX: Ensure header content is vertically centered in the collapsed bar */
+    height: 100%; 
+}
+
+/* NEW: Base Layer Selector Styling */
+#base-layer-selector {
+    position: absolute;
+    left: 60px; /* Position it on the left, respecting padding */
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between the two radio groups */
+    font-size: 0.9em;
+}
+
+.base-layer-group {
+    margin-bottom: 0;
+}
+
+/* Ensure labels in this group are not bold */
+#base-layer-selector label {
+    font-weight: normal; 
+    margin-bottom: 0;
+}
+/* END NEW Base Layer Selector Styling */
+
+#top-bar h1 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.3rem; /* Smaller font size */
+    text-align: center;
+}
+
+#collapse-button {
+    position: absolute;
+    /* FIX: Set right to 60px to align the button relative to the padding, 
+     making the center of the title appear visually correct. */
+    right: 60px; 
+    top: 50%;
+    /* FIX: Remove translateY to allow the icon's container to be centered */
+    transform: translateY(-50%); 
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.2rem; /* Smaller icon */
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    /* NEW: Removed fixed height to allow vertical centering by 'top: 50%' */
+}
+
+#top-bar.collapsed #collapse-button i {
+    /* Only apply the rotation on collapse, not the translate */
+    transform: rotate(180deg);
+}
+
+#control-content {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+#top-bar:not(.collapsed) #control-content {
+    /* INCREASED EXPANDED HEIGHT: Adjusted from 250px to 280px */
+    max-height: 280px; 
+    opacity: 1;
+    margin-top: 5px; /* Reduced spacing */
+    padding-bottom: 5px;
+}
+
+.control-group {
+    margin-bottom: 5px; /* Reduced vertical spacing */
+}
+
+.radio-group {
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+}
+
+.radio-group input[type="radio"] {
+    margin-right: 5px;
+}
+
 #date-selector-group {
-    margin-left: 15px;
-    /* FIX: Ensure date selector group contents are aligned correctly (inline) */
-    display: flex; 
-    align-items: center;
+    margin-left: 15px;
+    display: flex;
+    align-items: center;
 }
 
 #date-selector-group label {
-    margin-right: 5px;
-    margin-bottom: 0;
-    font-weight: normal;
-    display: inline; /* Makes date label flow correctly */
+    margin-right: 5px;
+    margin-bottom: 0;
+    font-weight: normal;
 }
 
 label {
-    display: block;
-    margin-bottom: 4px; /* Reduced vertical spacing */
-    font-weight: bold;
-    font-size: 0.9em;
+    display: block;
+    margin-bottom: 4px; /* Reduced vertical spacing */
+    font-weight: bold;
+    font-size: 0.9em;
 }
 
 /* Dropdown and Date input styling */
 #state-dropdown, #district-dropdown, #claim-date {
-    padding: 6px; /* Reduced padding */
-    border-radius: 4px;
-    border: 1px solid #c8e6c9;
-    box-sizing: border-box;
-    background-color: #f1f8f1;
-    color: #333;
-    transition: all 0.3s ease;
-    font-size: 0.9em;
-    width: 100%; /* Ensures dropdowns fill the width of their parent .control-group */
+    padding: 6px; /* Reduced padding */
+    border-radius: 4px;
+    border: 1px solid #c8e6c9;
+    box-sizing: border-box;
+    background-color: #f1f8f1;
+    color: #333;
+    transition: all 0.3s ease;
+    font-size: 0.9em;
 }
 
 #district-dropdown:disabled {
-    background-color: #aaa;
-    color: #666;
-    cursor: not-allowed;
+    background-color: #aaa;
+    color: #666;
+    cursor: not-allowed;
 }
 
 .status-message {
-    margin-top: 5px;
-    padding: 8px; /* Reduced padding */
-    background-color: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-    min-height: 30px;
-    font-size: 0.8em; /* Smaller font */
-    color: #c8e6c9;
+    margin-top: 5px;
+    padding: 8px; /* Reduced padding */
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    min-height: 30px;
+    font-size: 0.8em; /* Smaller font */
+    color: #c8e6c9;
 }
 
 /* Map Styling */
 #map {
-    width: 100%;
-    height: 100vh;
-    padding-top: 38px; /* Default height of collapsed top-bar */
-    box-sizing: border-box;
-    transition: padding-top 0.3s ease, margin-right 0.3s ease;
+    width: 100%;
+    height: 100vh;
+    padding-top: 38px; /* Default height of collapsed top-bar */
+    box-sizing: border-box;
+    transition: padding-top 0.3s ease, margin-right 0.3s ease;
 }
 
-/* Adjusted to new expanded height: Adjusted to 300px */
-#top-bar:not(.collapsed) + #map { 
-    padding-top: 340px; /* Increased slightly for safety after CSS fixes */
+/* Adjusted to new expanded height: Adjusted from 240px to 270px */
+#top-bar:not(.collapsed) + #map { 
+    padding-top: 270px;
 }
 
 /* --- Statistics Sidebar Styling --- */
 #stats-sidebar {
-    position: fixed;
-    top: 38px; /* Starts below the collapsed title bar */
-    right: 0;
-    width: 260px; /* Thin sidebar width */
-    height: calc(100% - 38px);
-    background-color: rgba(34, 139, 34, 0.95); /* Semi-transparent Forest Green */
-    color: #fff;
-    padding: 15px;
-    box-shadow: -2px 0 8px rgba(0,0,0,0.3);
-    z-index: 999;
-    transition: transform 0.3s ease;
-    box-sizing: border-box;
-    overflow-y: auto;
+    position: fixed;
+    top: 38px; /* Starts below the collapsed title bar */
+    right: 0;
+    width: 260px; /* Thin sidebar width */
+    height: calc(100% - 38px);
+    background-color: rgba(34, 139, 34, 0.95); /* Semi-transparent Forest Green */
+    color: #fff;
+    padding: 15px;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.3);
+    z-index: 999;
+    transition: transform 0.3s ease;
+    box-sizing: border-box;
+    overflow-y: auto;
 }
 
 #stats-sidebar.hidden {
-    transform: translateX(100%); /* Slide out */
+    transform: translateX(100%); /* Slide out */
 }
 
 /* NEW: Sidebar Toggle Button Styling */
 #sidebar-toggle-button {
-    position: absolute;
-    top: 50%;
-    left: -20px; /* Position it outside the sidebar */
-    transform: translateY(-50%);
-    width: 20px;
-    height: 40px;
-    background-color: #228b22; /* Forest Green, matches top bar */
-    color: #fff;
-    border: none;
-    border-radius: 4px 0 0 4px; /* Rounded left side */
-    box-shadow: -2px 0 8px rgba(0,0,0,0.3);
-    cursor: pointer;
-    z-index: 1000; 
-    padding: 0; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: absolute;
+    top: 50%;
+    left: -20px; /* Position it outside the sidebar */
+    transform: translateY(-50%);
+    width: 20px;
+    height: 40px;
+    background-color: #228b22; /* Forest Green, matches top bar */
+    color: #fff;
+    border: none;
+    border-radius: 4px 0 0 4px; /* Rounded left side */
+    box-shadow: -2px 0 8px rgba(0,0,0,0.3);
+    cursor: pointer;
+    z-index: 1000; 
+    padding: 0; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #stats-sidebar.hidden #sidebar-toggle-button i {
-    /* Arrow points right when closed */
-    transform: rotate(180deg);
-    transition: transform 0.3s ease;
+    /* Arrow points right when closed */
+    transform: rotate(180deg);
+    transition: transform 0.3s ease;
 }
 #stats-sidebar:not(.hidden) #sidebar-toggle-button i {
-     /* Arrow points left when open */
-    transform: rotate(0deg); 
-    transition: transform 0.3s ease;
+     /* Arrow points left when open */
+    transform: rotate(0deg); 
+    transition: transform 0.3s ease;
 }
 
 #stats-sidebar h2 {
-    font-size: 1.1rem; /* Smaller font */
-    color: #fff;
-    margin-top: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-    padding-bottom: 5px;
-    margin-bottom: 10px;
+    font-size: 1.1rem; /* Smaller font */
+    color: #fff;
+    margin-top: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    padding-bottom: 5px;
+    margin-bottom: 10px;
 }
 
 #statistics-panel {
-    font-size: 0.8em; /* Smaller font for stats */
-    line-height: 1.3; /* Less line spacing */
-    padding-bottom: 10px;
-    opacity: 1 !important; /* Override opacity set by top-bar control logic */
-    max-height: 1000px !important; /* Override max-height set by top-bar control logic */
+    font-size: 0.8em; /* Smaller font for stats */
+    line-height: 1.3; /* Less line spacing */
+    padding-bottom: 10px;
+    opacity: 1 !important; /* Override opacity set by top-bar control logic */
+    max-height: 1000px !important; /* Override max-height set by top-bar control logic */
 }
 
 #statistics-panel strong {
-    color: #FFD700;
-    display: block;
-    margin-top: 6px;
-    font-size: 1.05em;
+    color: #FFD700;
+    display: block;
+    margin-top: 6px;
+    font-size: 1.05em;
 }
 
 #statistics-panel ul {
-    list-style: none;
-    padding: 0;
-    margin: 3px 0 8px 0;
+    list-style: none;
+    padding: 0;
+    margin: 3px 0 8px 0;
 }
 
 #statistics-panel li {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 3px 5px;
-    margin-bottom: 2px;
-    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 3px 5px;
+    margin-bottom: 2px;
+    border-radius: 2px;
 }
 
 /* Adjust map when sidebar is open */
 .stats-open #map {
-    margin-right: 260px;
-    width: calc(100% - 260px);
+    margin-right: 260px;
+    width: calc(100% - 260px);
 }
 
 /* Responsive adjustment */
 @media (max-width: 768px) {
-    #top-bar {
-        padding: 5px 10px; /* Reduced horizontal padding on mobile */
+    #top-bar:not(.collapsed) + #map {
+        padding-top: 380px; /* Adjusted to 380px for stacked content on small screens */
     }
-    #collapse-button {
-        right: 10px; /* Positioned correctly relative to new padding */
+    #stats-sidebar {
+        width: 100%;
+        height: 250px;
+        top: auto;
+        bottom: 0;
+        transform: translateY(100%);
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
     }
-    #top-bar:not(.collapsed) + #map {
-        padding-top: 410px; 
-    }
-    #stats-sidebar {
-        width: 100%;
-        height: 250px;
-        top: auto;
-        bottom: 0;
-        transform: translateY(100%);
-        box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
-    }
-    #stats-sidebar.hidden {
-        transform: translateY(100%);
-    }
-    .stats-open #stats-sidebar:not(.hidden) {
-        transform: translateY(0);
-    }
-    .stats-open #map {
-        margin-right: 0;
-        width: 100%;
-        height: calc(100vh - 250px);
-    }
+    #stats-sidebar.hidden {
+        transform: translateY(100%);
+    }
+    .stats-open #stats-sidebar:not(.hidden) {
+        transform: translateY(0);
+    }
+    .stats-open #map {
+        margin-right: 0;
+        width: 100%;
+        height: calc(100vh - 250px);
+    }
 }
