@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const map = L.map('map').setView([22.5937, 78.9629], 5);
 
-    // --- Base Layers (NEW) ---
+    // --- Base Layers ---
     // Administrative Base Layer (OpenStreetMap)
     const administrativeBaseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         maxZoom: 18
     });
 
-    // --- Overlay Groups (NEW) ---
+    // --- Overlay Groups ---
     // Use a FeatureGroup to manage all dynamic overlays (boundaries, claims, thematic)
     const overlayGroup = L.featureGroup().addTo(map);
 
@@ -181,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Generates claims for a single district with a specific count.
+     * MODIFIED: Removed special spread for Burhanpur
      */
     function generateDistrictClaims(district, countIndividual, countCommunity, startId, baseId) {
         const claims = [];
@@ -189,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!center) return claims;
 
         const [lat, lon] = center;
-        const spread = district === 'Burhanpur' ? 0.3 : 0.5; // Slightly tighter spread for Burhanpur
+        const spread = 0.3; // Tighter spread for better containment
         
         // Generate Individual Claims
         for (let i = 0; i < countIndividual; i++) {
@@ -239,12 +240,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- FRA Claims Data ---
     // Start ID for scattered claims will be around 1000, leaving 101-999 for Burhanpur and other blocks
     let startIdCounter = 101;
+    const burhanpurCenterLat = 21.3;
+    const burhanpurCenterLon = 76.2;
+    const burhanpurDistrictName = 'Burhanpur';
 
+    // MODIFIED: Manually defined Burhanpur claims (20 total) to ensure they are inside the boundary.
     const burhanpurClaims = [
-        // FIXED: 10 Individual + 10 Community Claims for Burhanpur
-        ...generateDistrictClaims('Burhanpur', 10, 10, 0, startIdCounter),
+        // Individual Claims (IDs 101-110, excluding 101 and 102)
+        createDummySquarePolygon(burhanpurCenterLat + 0.15, burhanpurCenterLon + 0.05, 'Madhya Pradesh', burhanpurDistrictName, 103, 'Individual'),
+        createDummySquarePolygon(burhanpurCenterLat + 0.05, burhanpurCenterLon + 0.1, 'Madhya Pradesh', burhanpurDistrictName, 104, 'Individual'),
+        createDummySquarePolygon(burhanpurCenterLat - 0.05, burhanpurCenterLon - 0.05, 'Madhya Pradesh', burhanpurDistrictName, 105, 'Individual'),
+        createDummySquarePolygon(burhanpurCenterLat + 0.0, burhanpurCenterLon + 0.0, 'Madhya Pradesh', burhanpurDistrictName, 106, 'Individual'),
+        createDummySquarePolygon(burhanpurCenterLat + 0.08, burhanpurCenterLon + 0.12, 'Madhya Pradesh', burhanpurDistrictName, 107, 'Individual'), // Adjusted 107
+        createDummySquarePolygon(burhanpurCenterLat - 0.1, burhanpurCenterLon + 0.03, 'Madhya Pradesh', burhanpurDistrictName, 108, 'Individual'),
+        createDummySquarePolygon(burhanpurCenterLat + 0.1, burhanpurCenterLon - 0.05, 'Madhya Pradesh', burhanpurDistrictName, 109, 'Individual'),
+        createDummySquarePolygon(burhanpurCenterLat - 0.15, burhanpurCenterLon - 0.1, 'Madhya Pradesh', burhanpurDistrictName, 110, 'Individual'),
+        
+        // Community Claims (IDs 111-120, excluding 112)
+        createDummySquarePolygon(burhanpurCenterLat + 0.1, burhanpurCenterLon + 0.1, 'Madhya Pradesh', burhanpurDistrictName, 111, 'Community'),
+        createDummySquarePolygon(burhanpurCenterLat - 0.08, burhanpurCenterLon - 0.12, 'Madhya Pradesh', burhanpurDistrictName, 113, 'Community'),
+        createDummySquarePolygon(burhanpurCenterLat + 0.03, burhanpurCenterLon - 0.15, 'Madhya Pradesh', burhanpurDistrictName, 114, 'Community'),
+        createDummySquarePolygon(burhanpurCenterLat - 0.0, burhanpurCenterLon + 0.15, 'Madhya Pradesh', burhanpurDistrictName, 115, 'Community'),
+        createDummySquarePolygon(burhanpurCenterLat - 0.12, burhanpurCenterLon + 0.08, 'Madhya Pradesh', burhanpurDistrictName, 116, 'Community'), // Adjusted 116
+        createDummySquarePolygon(burhanpurCenterLat + 0.05, burhanpurCenterLon - 0.0, 'Madhya Pradesh', burhanpurDistrictName, 117, 'Community'),
+        createDummySquarePolygon(burhanpurCenterLat - 0.15, burhanpurCenterLon + 0.15, 'Madhya Pradesh', burhanpurDistrictName, 118, 'Community'),
+        createDummySquarePolygon(burhanpurCenterLat + 0.12, burhanpurCenterLon + 0.02, 'Madhya Pradesh', burhanpurDistrictName, 119, 'Community'),
+        createDummySquarePolygon(burhanpurCenterLat - 0.0, burhanpurCenterLon - 0.08, 'Madhya Pradesh', burhanpurDistrictName, 120, 'Community'),
+        
+        // Add back the required number of claims to reach 20 total, using new IDs 121, 122, 123
+        createDummySquarePolygon(burhanpurCenterLat + 0.02, burhanpurCenterLon - 0.02, 'Madhya Pradesh', burhanpurDistrictName, 121, 'Individual'),
+        createDummySquarePolygon(burhanpurCenterLat - 0.02, burhanpurCenterLon + 0.02, 'Madhya Pradesh', burhanpurDistrictName, 122, 'Community'),
+        createDummySquarePolygon(burhanpurCenterLat + 0.18, burhanpurCenterLon + 0.18, 'Madhya Pradesh', burhanpurDistrictName, 123, 'Community'),
     ];
-    startIdCounter += 20;
+    // Filter out the claims explicitly excluded in the last step (which are now missing from the list above)
+    // NOTE: IDs 101, 102, 112 are implicitly removed as they are not generated in the new manual list.
+
+    startIdCounter = 124; // Update counter past manual block
 
     const mpScatteredClaims = generateScatteredClaims(stateData['madhya-pradesh'].districts, startIdCounter);
     startIdCounter += mpScatteredClaims.length;
@@ -255,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fraClaimsGeoJSON = {
         "type": "FeatureCollection",
         "features": [
-            // Burhanpur claims (now 20 total)
+            // Burhanpur claims (now 20 total, manually fixed coordinates)
             ...burhanpurClaims,
             
             // Scattered claims across the rest of MP
@@ -283,7 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
             createDummySquarePolygon(21.30, 86.75, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 24),
             createDummySquarePolygon(20.90, 87.05, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 25),
             createDummySquarePolygon(21.15, 86.95, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 26)
-        ].filter(f => ![101, 102, 112].includes(f.properties.id)) // MODIFIED: Exclude claims 101, 102, 112
+        ]
+        // Note: The filter for [101, 102, 112] is no longer needed here as they are not generated above, but keeping it clean:
+        .filter(f => ![101, 102, 112].includes(f.properties.id))
     };
     
     // --- DOM Elements ---
@@ -426,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const onEachFeature = (feature, layer) => {
             if (feature.properties) {
                 const props = feature.properties;
-                // MODIFIED: Removed GP and Tehsil from popup
+                // MODIFIED: GP and Tehsil removed from popup
                 const popupContent = `
                     <strong>FRA Claim/Title Details</strong>
                     <hr style="margin: 5px 0; border-color: #ddd;">
@@ -668,7 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * NEW: Function to switch between administrative and satellite base layers.
+     * Function to switch between administrative and satellite base layers.
      * It also manages the visibility of all dynamic overlays.
      */
     function switchBaseLayer(layerType) {
