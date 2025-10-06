@@ -10,11 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentLayer = null; // State or District GeoJSON layer (Boundaries)
     let fraClaimsLayer = null; // Layer for the small polygons (FRA Claims)
-    // Updated variable to track all thematic layers (Crop, Water, Homesteads, Forests)
-    let thematicLayer = null; 
+    let thematicLayer = null; // Tracks thematic layers (Crop, Water, Homesteads, Forests)
 
     // --- Configuration & Data ---
-    // State data (omitted for brevity, assume contents are here)
     const stateData = {
         'madhya-pradesh': {
             name: 'Madhya Pradesh', color: '#1f78b4', fillColor: '#a6cee3',
@@ -70,11 +68,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Custom name list for popups (omitted for brevity, assume contents are here)
+    // Custom name list for popups
     const holderNames = [
         "Sunder Das Ahuja", "Harvardhan Kumar", "Rajesh Gupta", "Arth Goyal", "Dinesh Ghai", 
         "Tripti Rao", "Ramesh Shankar", "Manoj Roy", "Ridhi Kumari", "Radha Rani", 
-        "Kareena Kumari", "Vivek Rao", "Akshay Soni", "Atharv Verma", "Dilip Sharma", 
+        "Kareena Kumari", "Vivek Rao", "Akshay Soni", "Atharv Verma", "Dilip Sharma",  
         "Nitin Jhangra", "Pankaj Choudhari", "Pooja Tripathi", "Preet Bajpayee"
     ];
 
@@ -86,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Generates a square GeoJSON polygon feature centered at [lat, lon].
      */
-    function createDummySquarePolygon(lat, lon, state, district, id) {
+    function createDummySquarePolygon(lat, lon, state, district, id, claimTypeOverride = null) {
         // Base size for the claim area (in degrees, slightly smaller than old)
         const size = 0.005; 
         const halfSize = size / 2;
@@ -96,12 +94,11 @@ document.addEventListener('DOMContentLoaded', () => {
             [lon + halfSize, lat - halfSize], // SE
             [lon + halfSize, lat + halfSize], // NE
             [lon - halfSize, lat + halfSize], // NW
-            [lon - halfSize, lat - halfSize] // Close the loop
+            [lon - halfSize, lat - halfSize]  // Close the loop
         ];
         
-        // Use a random value to determine if it's Individual or Community
-        const isIndividual = Math.random() < 0.6; // 60% chance of being individual
-        const claimType = isIndividual ? 'Individual' : 'Community';
+        // Use a random value to determine if it's Individual or Community, unless overridden
+        const claimType = claimTypeOverride || (Math.random() < 0.6 ? 'Individual' : 'Community');
         
         const areaHectares = (Math.random() * (10.0 - 0.5) + 0.5).toFixed(2); // 0.5 to 10.0 hectares
         
@@ -136,15 +133,52 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    // --- FRA Claims Data ---
+    // Function to generate sequential dummy claims for Burhanpur
+    function generateBurhanpurClaims(startId) {
+        const claims = [];
+        const baseLat = 21.2;
+        const baseLon = 76.35;
+        let id = startId;
+        
+        // 10 Individual Claims
+        for (let i = 0; i < 10; i++) {
+            claims.push(createDummySquarePolygon(
+                baseLat + (Math.random() * 0.2 - 0.1), // small random lat variance
+                baseLon + (Math.random() * 0.2 - 0.1), // small random lon variance
+                'Madhya Pradesh', 
+                'Burhanpur', 
+                id++, 
+                'Individual'
+            ));
+        }
+
+        // 10 Community Claims
+        for (let i = 0; i < 10; i++) {
+            claims.push(createDummySquarePolygon(
+                baseLat + 0.3 + (Math.random() * 0.2 - 0.1), 
+                baseLon - 0.3 + (Math.random() * 0.2 - 0.1), 
+                'Madhya Pradesh', 
+                'Burhanpur', 
+                id++, 
+                'Community'
+            ));
+        }
+        return claims;
+    }
+
 
     // GeoJSON for the dummy claims (Coordinates are the center points)
     const fraClaimsGeoJSON = {
         "type": "FeatureCollection",
         "features": [
-            // Madhya Pradesh - Burhanpur (3 Polygons)
-            createDummySquarePolygon(21.28, 76.30, 'Madhya Pradesh', 'Burhanpur', 101),
-            createDummySquarePolygon(21.35, 76.30, 'Madhya Pradesh', 'Burhanpur', 102),
-            createDummySquarePolygon(21.15, 76.45, 'Madhya Pradesh', 'Burhanpur', 103),
+            // Original Madhya Pradesh claims (Burhanpur removed for new generated claims)
+            // createDummySquarePolygon(21.28, 76.30, 'Madhya Pradesh', 'Burhanpur', 101),
+            // createDummySquarePolygon(21.35, 76.30, 'Madhya Pradesh', 'Burhanpur', 102),
+            // createDummySquarePolygon(21.15, 76.45, 'Madhya Pradesh', 'Burhanpur', 103),
+
+            // NEW: 20 Generated claims for Burhanpur
+            ...generateBurhanpurClaims(101),
 
             // Madhya Pradesh - Seoni (5 Polygons)
             createDummySquarePolygon(22.05, 79.20, 'Madhya Pradesh', 'Seoni', 201),
@@ -190,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cropLandRadio = document.getElementById('crop-land-radio'); 
     const waterBodiesRadio = document.getElementById('water-bodies-radio'); 
     const homesteadsRadio = document.getElementById('homesteads-radio'); 
-    const forestsRadio = document.getElementById('forests-radio'); // NEW: Forest Cover
+    const forestsRadio = document.getElementById('forests-radio'); 
     const statsSidebar = document.getElementById('stats-sidebar');
     const sidebarToggleButton = document.getElementById('sidebar-toggle-button'); 
 
@@ -200,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
      * Calculates the dynamic top padding for Leaflet's fitBounds function.
      */
     function getFitBoundsPadding() {
-        // topBar.offsetHeight will be approx 38px or 270px based on updated CSS
         const sidebarWidth = statsSidebar.classList.contains('hidden') ? 0 : 260;
         return [topBar.offsetHeight + 10, sidebarWidth]; // [Y offset, X offset]
     }
@@ -328,6 +361,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     7. Village/Gram Sabha: ${props.Village || 'N/A'}<br>
                     8. Gram Panchayat: ${props.GP || 'N/A'}<br>
                     9. Tehsil/Taluka: ${props.Tehsil || 'N/A'}<br>
+                    <hr style="margin: 5px 0; border-color: #ddd;">
+                    <a href="#" class="dss-button" data-claim-id="${props.id}">
+                        <button style="background-color: #f0ad4e; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-weight: bold;">Run DSS Engine</button>
+                    </a>
                 `;
                 layer.bindPopup(popupContent);
             }
@@ -353,6 +390,21 @@ document.addEventListener('DOMContentLoaded', () => {
         map.fitBounds(fraClaimsLayer.getBounds(), {
             paddingTopLeft: getFitBoundsPadding(),
             maxZoom: 14 
+        });
+
+        // Add event listener for the DSS button after the layer is added
+        fraClaimsLayer.on('popupopen', (e) => {
+            const popup = e.popup.getElement();
+            const dssButton = popup.querySelector('.dss-button button');
+            if (dssButton) {
+                dssButton.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    // Placeholder action: Replace '#' with the actual DSS engine URL when ready
+                    const claimId = event.target.closest('.dss-button').getAttribute('data-claim-id');
+                    alert(`Redirecting to DSS Engine for Claim ID: ${claimId}. (Placeholder action)`);
+                    // window.location.href = `https://your-dss-engine.com/dss?claim_id=${claimId}`;
+                });
+            }
         });
     }
 
@@ -460,11 +512,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 layerName = 'Homesteads';
                 style = { color: '#FF4500', fillColor: '#FF4500', fillOpacity: 0.7, weight: 1.5 };
                 break;
-            // FIXED: Filename changed to green_finally.geojson
             case 'forests':
-                fileName = 'green_finally.geojson'; // <--- UPDATED FILENAME
+                fileName = 'land_use.geojson';
                 layerName = 'Forest Cover';
-                // Using a suitable green color for forests
                 style = { color: '#006400', fillColor: '#38761d', fillOpacity: 0.6, weight: 1.5 }; 
                 break;
             default:
@@ -630,7 +680,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // UPDATED LIST: Contains all four thematic layers
             const thematicLayers = ['crop-land', 'water-bodies', 'homesteads', 'forests']; 
 
             // If a thematic layer is selected, and a district is selected, clear district
