@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentLayer = null; // State or District GeoJSON layer (Boundaries)
     let fraClaimsLayer = null; // Layer for the small polygons (FRA Claims)
-    let thematicLayer = null; // Tracks thematic layers (Crop, Water, Homesteads, Forests)
+    let thematicLayer = null; // Tracks all grouped thematic layers 
 
     // --- Configuration & Data ---
     const stateData = {
@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Area_Hectares": `${areaHectares}`,
                 "Title_No": status === 'Approved' ? `TN-${id}` : 'N/A',
                 "Name_Holders": nameHolder,
-                // NEW: Use random village name
+                // Using the random village name
                 "Village": randomVillageName, 
                 "GP": `Gram Panchayat ${Math.floor(id / 10) + 1}`,
                 "Tehsil": `Tehsil ${Math.floor(id / 20) + 1}`
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fraClaimsGeoJSON = {
         "type": "FeatureCollection",
         "features": [
-            // NEW: Scattered claims across all MP districts listed in stateData
+            // Scattered claims across all MP districts listed in stateData
             ...generateScatteredClaims(stateData['madhya-pradesh'].districts, 101),
             
             // Telangana - Adilabad (4 Polygons)
@@ -519,30 +519,32 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        let fileName = '';
+        let fileNames = [];
         let layerName = '';
-        let style = {};
-
+        let baseStyle = {};
+        
+        // Define layer configurations
         switch (layerType) {
             case 'crop-land':
-                fileName = 'yellow_crop_land.geojson';
+                fileNames = ['yellow_crop_land.geojson'];
                 layerName = 'Agricultural Land';
-                style = { color: '#FFD700', fillColor: '#FFD700', fillOpacity: 0.5, weight: 1.5 };
+                baseStyle = { color: '#FFD700', fillColor: '#FFD700', fillOpacity: 0.5, weight: 1.5 };
                 break;
             case 'water-bodies':
-                fileName = 'blue_finally.geojson'; 
+                fileNames = ['blue_finally.geojson']; 
                 layerName = 'Water Bodies';
-                style = { color: '#00BFFF', fillColor: '#00BFFF', fillOpacity: 0.8, weight: 1.5 };
+                baseStyle = { color: '#00BFFF', fillColor: '#00BFFF', fillOpacity: 0.8, weight: 1.5 };
                 break;
             case 'homesteads':
-                fileName = 'red_finally.geojson';
+                fileNames = ['red_finally.geojson'];
                 layerName = 'Homesteads';
-                style = { color: '#FF4500', fillColor: '#FF4500', fillOpacity: 0.7, weight: 1.5 };
+                baseStyle = { color: '#FF4500', fillColor: '#FF4500', fillOpacity: 0.7, weight: 1.5 };
                 break;
             case 'forests':
-                fileName = 'land_use.geojson';
-                layerName = 'Forest Cover';
-                style = { color: '#006400', fillColor: '#38761d', fillOpacity: 0.6, weight: 1.5 }; 
+                // FIXED: Load two files in the specified order (land_use first)
+                fileNames = ['land_use.geojson', 'green_finally.geojson']; 
+                layerName = 'Forest Cover & Land Use';
+                baseStyle = { color: '#006400', fillColor: '#38761d', fillOpacity: 0.6, weight: 1.5 }; 
                 break;
             default:
                 return;
@@ -556,29 +558,56 @@ document.addEventListener('DOMContentLoaded', () => {
             renderBoundaries(stateKey, null); 
         }
 
-        fetch(fileName)
-            .then(r => {
-                if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                return r.json();
-            })
-            .then(data => {
-                thematicLayer = L.geoJSON(data, {
-                    style: style,
-                    onEachFeature: (feature, layer) => {
-                        layer.bindPopup(`<strong>Layer:</strong> ${layerName}`);
-                    }
-                }).addTo(map);
+        const fetchPromises = fileNames.map(fileName => 
+            fetch(fileName)
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status} for ${fileName}`);
+                    return r.json();
+                })
+        );
+        
+        Promise.all(fetchPromises)
+            .then(dataArray => {
+                // Create a feature group to hold all layers for this thematic selection
+                const featureGroup = L.featureGroup();
+                let bounds = null;
 
-                // Fit bounds to the new thematic layer
-                map.fitBounds(thematicLayer.getBounds(), {
-                    paddingTopLeft: getFitBoundsPadding()
+                dataArray.forEach((data, index) => {
+                    const layerOptions = {
+                        style: (feature) => {
+                            // Use a consistent style for simplicity unless more advanced logic is added later
+                            return baseStyle; 
+                        },
+                        onEachFeature: (feature, layer) => {
+                            layer.bindPopup(`<strong>Layer:</strong> ${layerName} (File ${index + 1})`);
+                        }
+                    };
+
+                    const layer = L.geoJSON(data, layerOptions);
+                    featureGroup.addLayer(layer);
+                    
+                    // Combine bounds
+                    if (bounds) {
+                        bounds.extend(layer.getBounds());
+                    } else {
+                        bounds = layer.getBounds();
+                    }
                 });
 
-                updateStatus(`Displaying ${layerName} for Madhya Pradesh.`);
+                thematicLayer = featureGroup.addTo(map);
+
+                // Fit bounds to the combined thematic layers
+                if (bounds) {
+                    map.fitBounds(bounds, {
+                        paddingTopLeft: getFitBoundsPadding()
+                    });
+                }
+
+                updateStatus(`Displaying ${layerName} for Madhya Pradesh. (${fileNames.length} layer${fileNames.length > 1 ? 's' : ''} loaded).`);
             })
             .catch(err => {
-                console.error(`Error loading file ${fileName}:`, err);
-                updateStatus(`Could not load ${layerName} file. Please ensure the file is named '${fileName}' and is in the correct directory. Check the console for details.`, true);
+                console.error(`Error loading thematic files:`, err);
+                updateStatus(`Could not load thematic file(s) for ${layerName}. Check the console for details.`, true);
             });
     }
 
