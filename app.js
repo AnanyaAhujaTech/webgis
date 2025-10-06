@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const holderNames = [
         "Sunder Das Ahuja", "Harvardhan Kumar", "Rajesh Gupta", "Arth Goyal", "Dinesh Ghai", 
         "Tripti Rao", "Ramesh Shankar", "Manoj Roy", "Ridhi Kumari", "Radha Rani", 
-        "Kareena Kumari", "Vivek Rao", "Akshay Soni", "Atharv Verma", "Dilip Sharma",  
+        "Kareena Kumari", "Vivek Rao", "Akshay Soni", "Atharv Verma", "Dilip Sharma", 
         "Nitin Jhangra", "Pankaj Choudhari", "Pooja Tripathi", "Preet Bajpayee"
     ];
 
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
             [lon + halfSize, lat - halfSize], // SE
             [lon + halfSize, lat + halfSize], // NE
             [lon - halfSize, lat + halfSize], // NW
-            [lon - halfSize, lat - halfSize]  // Close the loop
+            [lon - halfSize, lat - halfSize] // Close the loop
         ];
         
         // Use a random value to determine if it's Individual or Community
@@ -460,9 +460,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 layerName = 'Homesteads';
                 style = { color: '#FF4500', fillColor: '#FF4500', fillOpacity: 0.7, weight: 1.5 };
                 break;
-            // NEW CASE: Forest Cover Layer
+            // FIXED: Filename changed to green_finally.geojson
             case 'forests':
-                fileName = 'land_use.geojson';
+                fileName = 'green_finally.geojson'; // <--- UPDATED FILENAME
                 layerName = 'Forest Cover';
                 // Using a suitable green color for forests
                 style = { color: '#006400', fillColor: '#38761d', fillOpacity: 0.6, weight: 1.5 }; 
