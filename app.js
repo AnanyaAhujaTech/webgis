@@ -76,6 +76,35 @@ document.addEventListener('DOMContentLoaded', () => {
         "Nitin Jhangra", "Pankaj Choudhari", "Pooja Tripathi", "Preet Bajpayee"
     ];
 
+    // NEW: List of village names
+    const villageNamesMP = [
+        "Tikamgarh", "Lalitpur", "Talbehat", "Prithvipur", "Mauranipur", "Mahoba", "Panna", 
+        "Karrera", "Datia", "Maudaha", "Rath", "Banda", "Hamirpur", "Kalpi", "Auraiya", 
+        "Jalaun", "Bhind", "Konch", "Kailaras", "Shivpuri", "Dabra", "Narwar"
+    ];
+
+    // Placeholder coordinates for MP districts (approximate centers for scattering)
+    const mpDistrictCoords = {
+        'Burhanpur': [21.3, 76.2], 'Seoni': [22.0, 79.5], 'Alirajpur': [22.3, 74.3], 
+        'Chhindwara': [22.0, 78.9], 'Harda': [22.4, 77.1], 'Khargone': [21.8, 75.6], 
+        'Khandwa': [21.8, 76.4], 'Balaghat': [21.8, 80.3], 'Barwani': [22.0, 74.8], 
+        'Betul': [22.0, 77.9], 'Morena': [26.5, 78.0], 'Bhind': [26.5, 78.7], 
+        'Gwalior': [26.2, 78.1], 'Sheopur': [25.6, 76.7], 'Shivpuri': [25.5, 77.7], 
+        'Tikamgarh': [24.7, 79.0], 'Neemuch': [24.4, 74.8], 'Rewa': [24.5, 81.3], 
+        'Satna': [24.5, 80.8], 'Guna': [24.4, 77.3], 'Ashoknagar': [24.5, 77.7], 
+        'Mandsaur': [24.1, 75.1], 'Singrauli': [24.2, 82.6], 'Sidhi': [24.3, 81.9], 
+        'Sagar': [23.8, 78.7], 'Damoh': [23.8, 79.4], 'Shajapur': [23.4, 76.8], 
+        'Vidisha': [23.5, 77.8], 'Rajgarh': [24.0, 76.9], 'Shahdol': [23.3, 81.4], 
+        'Katni': [23.8, 80.4], 'Umaria': [23.3, 80.8], 'Ratlam': [23.3, 75.0], 
+        'Bhopal': [23.2, 77.4], 'Ujjain': [23.2, 75.7], 'Raisen': [23.3, 77.7], 
+        'Sehore': [23.2, 77.0], 'Jabalpur': [23.1, 79.9], 'Dewas': [23.2, 76.1], 
+        'Anuppur': [23.1, 81.7], 'Jhabua': [22.7, 74.6], 'Dindori': [22.9, 81.0], 
+        'Narsinghpur': [22.9, 79.2], 'Dhar': [22.6, 75.3], 'Indore': [22.7, 75.8], 
+        'Mandla': [22.5, 80.3], 'Hoshangabad': [22.7, 77.7], 'Agar Malwa': [23.7, 76.0], 
+        'Datia': [25.6, 78.4], 'Chhatarpur': [24.9, 79.6], 'Panna': [24.7, 80.1], 
+        'Niwari': [25.3, 78.8]
+    };
+    
     /**
      * Helper function to get a random item from an array.
      */
@@ -102,11 +131,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const areaHectares = (Math.random() * (10.0 - 0.5) + 0.5).toFixed(2); // 0.5 to 10.0 hectares
         
+        // Use a random village name for the location
+        const randomVillageName = getRandomElement(villageNamesMP);
+        
         let nameHolder;
         if (claimType === 'Individual') {
             nameHolder = getRandomElement(holderNames);
         } else {
-            nameHolder = `Gram Sabha - ${district} Village Cluster ${Math.floor(id / 5) + 1}`;
+            // Include random village name for better context in community claims
+            nameHolder = `Gram Sabha - ${randomVillageName} Village Cluster ${Math.floor(id / 5) + 1}`;
         }
         
         const status = (Math.random() < 0.7) ? 'Approved' : 'Claimed/Pending'; // 70% chance of being approved for diversity
@@ -122,7 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Area_Hectares": `${areaHectares}`,
                 "Title_No": status === 'Approved' ? `TN-${id}` : 'N/A',
                 "Name_Holders": nameHolder,
-                "Village": `Village ${Math.floor(id / 3) + 1}`,
+                // NEW: Use random village name
+                "Village": randomVillageName, 
                 "GP": `Gram Panchayat ${Math.floor(id / 10) + 1}`,
                 "Tehsil": `Tehsil ${Math.floor(id / 20) + 1}`
             },
@@ -133,60 +167,53 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- FRA Claims Data ---
-    // Function to generate sequential dummy claims for Burhanpur
-    function generateBurhanpurClaims(startId) {
+    // Function to generate scattered claims across MP districts
+    function generateScatteredClaims(districts, startId) {
         const claims = [];
-        const baseLat = 21.2;
-        const baseLon = 76.35;
         let id = startId;
         
-        // 10 Individual Claims
-        for (let i = 0; i < 10; i++) {
-            claims.push(createDummySquarePolygon(
-                baseLat + (Math.random() * 0.2 - 0.1), // small random lat variance
-                baseLon + (Math.random() * 0.2 - 0.1), // small random lon variance
-                'Madhya Pradesh', 
-                'Burhanpur', 
-                id++, 
-                'Individual'
-            ));
-        }
+        // Iterate through all MP districts
+        districts.forEach(district => {
+            const center = mpDistrictCoords[district];
+            if (!center) return; // Skip if coordinates are not defined
 
-        // 10 Community Claims
-        for (let i = 0; i < 10; i++) {
-            claims.push(createDummySquarePolygon(
-                baseLat + 0.3 + (Math.random() * 0.2 - 0.1), 
-                baseLon - 0.3 + (Math.random() * 0.2 - 0.1), 
-                'Madhya Pradesh', 
-                'Burhanpur', 
-                id++, 
-                'Community'
-            ));
-        }
+            const [lat, lon] = center;
+            const spread = 0.5; // Degree spread for realism
+            
+            // Generate 3 Individual Claims per District
+            for (let i = 0; i < 3; i++) {
+                claims.push(createDummySquarePolygon(
+                    lat + (Math.random() * spread - spread / 2),
+                    lon + (Math.random() * spread - spread / 2),
+                    'Madhya Pradesh', 
+                    district, 
+                    id++, 
+                    'Individual'
+                ));
+            }
+
+            // Generate 2 Community Claims per District
+            for (let i = 0; i < 2; i++) {
+                claims.push(createDummySquarePolygon(
+                    lat + (Math.random() * spread - spread / 2),
+                    lon + (Math.random() * spread - spread / 2),
+                    'Madhya Pradesh', 
+                    district, 
+                    id++, 
+                    'Community'
+                ));
+            }
+        });
         return claims;
     }
 
-
-    // GeoJSON for the dummy claims (Coordinates are the center points)
+    // --- FRA Claims Data ---
     const fraClaimsGeoJSON = {
         "type": "FeatureCollection",
         "features": [
-            // Original Madhya Pradesh claims (Burhanpur removed for new generated claims)
-            // createDummySquarePolygon(21.28, 76.30, 'Madhya Pradesh', 'Burhanpur', 101),
-            // createDummySquarePolygon(21.35, 76.30, 'Madhya Pradesh', 'Burhanpur', 102),
-            // createDummySquarePolygon(21.15, 76.45, 'Madhya Pradesh', 'Burhanpur', 103),
-
-            // NEW: 20 Generated claims for Burhanpur
-            ...generateBurhanpurClaims(101),
-
-            // Madhya Pradesh - Seoni (5 Polygons)
-            createDummySquarePolygon(22.05, 79.20, 'Madhya Pradesh', 'Seoni', 201),
-            createDummySquarePolygon(22.15, 79.50, 'Madhya Pradesh', 'Seoni', 202),
-            createDummySquarePolygon(21.90, 79.70, 'Madhya Pradesh', 'Seoni', 203),
-            createDummySquarePolygon(22.25, 79.35, 'Madhya Pradesh', 'Seoni', 204),
-            createDummySquarePolygon(22.00, 79.85, 'Madhya Pradesh', 'Seoni', 205),
-
+            // NEW: Scattered claims across all MP districts listed in stateData
+            ...generateScatteredClaims(stateData['madhya-pradesh'].districts, 101),
+            
             // Telangana - Adilabad (4 Polygons)
             createDummySquarePolygon(19.40, 78.40, 'Telangana', 'Adilabad', 301),
             createDummySquarePolygon(19.70, 78.65, 'Telangana', 'Adilabad', 302),
@@ -358,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     4. Name(s) of Holder(s): ${props.Name_Holders || 'N/A'}<br>
                     5. Area (Hectares): ${props.Area_Hectares}<br>
                     6. Title No.: ${props.Title_No}<br>
-                    7. Village/Gram Sabha: ${props.Village || 'N/A'}<br>
+                    7. Village/Gram Sabha: <strong>${props.Village || 'N/A'}</strong><br>
                     8. Gram Panchayat: ${props.GP || 'N/A'}<br>
                     9. Tehsil/Taluka: ${props.Tehsil || 'N/A'}<br>
                     <hr style="margin: 5px 0; border-color: #ddd;">
