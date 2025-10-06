@@ -3,23 +3,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const map = L.map('map').setView([22.5937, 78.9629], 5);
 
-    // Initial Base Map Layer (OpenStreetMap)
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // --- Base Layers (NEW) ---
+    // Administrative Base Layer (OpenStreetMap)
+    const administrativeBaseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Satellite Layer (ESRI World Imagery for rugged look)
+    const satelliteBaseLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+        maxZoom: 18
     });
-    // Placeholder for the Satellite/Terrain image URL.
-    // NOTE: You must replace 'satellite_image.png' with the actual path to your image file (e.g., a static image of rugged terrain).
-    const SATELLITE_IMAGE_URL = 'satellite_image.png'; 
-    const GLOBAL_BOUNDS = [[18.0, 72.0], [27.0, 84.0]]; // Approximate bounds for India/MP region
 
-    map.addLayer(osmLayer);
+    // --- Overlay Groups (NEW) ---
+    // Use a FeatureGroup to manage all dynamic overlays (boundaries, claims, thematic)
+    const overlayGroup = L.featureGroup().addTo(map);
 
-    let satelliteLayer = null; // To hold the static image layer
-    let currentBaseLayer = osmLayer;
     let currentLayer = null; // State or District GeoJSON layer (Boundaries)
     let fraClaimsLayer = null; // Layer for the small polygons (FRA Claims)
-    let thematicLayer = null; // Tracks all grouped thematic layers 
+    let thematicLayer = null; // Tracks all grouped thematic layers
 
     // --- Configuration & Data ---
     const stateData = {
@@ -164,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Area_Hectares": `${areaHectares}`,
                 "Title_No": status === 'Approved' ? `TN-${id}` : 'N/A',
                 "Name_Holders": nameHolder,
+                // Using the random village name
                 "Village": randomVillageName, 
                 "GP": `Gram Panchayat ${Math.floor(id / 10) + 1}`,
                 "Tehsil": `Tehsil ${Math.floor(id / 20) + 1}`
@@ -233,14 +237,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- FRA Claims Data ---
-    
-    // IDs to be removed from the final GeoJSON
-    const CLAIMS_TO_REMOVE = [101, 102, 112]; 
-
+    // Start ID for scattered claims will be around 1000, leaving 101-999 for Burhanpur and other blocks
     let startIdCounter = 101;
 
     const burhanpurClaims = [
-        // 10 Individual + 10 Community Claims for Burhanpur (total 20)
+        // FIXED: 10 Individual + 10 Community Claims for Burhanpur
         ...generateDistrictClaims('Burhanpur', 10, 10, 0, startIdCounter),
     ];
     startIdCounter += 20;
@@ -254,8 +255,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const fraClaimsGeoJSON = {
         "type": "FeatureCollection",
         "features": [
-            // Filter out specific claims: 101, 102, 112
-            ...burhanpurClaims.filter(f => !CLAIMS_TO_REMOVE.includes(f.properties.id)),
+            // Burhanpur claims (now 20 total)
+            ...burhanpurClaims,
             
             // Scattered claims across the rest of MP
             ...mpScatteredClaims,
@@ -282,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
             createDummySquarePolygon(21.30, 86.75, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 24),
             createDummySquarePolygon(20.90, 87.05, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 25),
             createDummySquarePolygon(21.15, 86.95, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 26)
-        ]
+        ].filter(f => ![101, 102, 112].includes(f.properties.id)) // MODIFIED: Exclude claims 101, 102, 112
     };
     
     // --- DOM Elements ---
@@ -298,10 +299,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const waterBodiesRadio = document.getElementById('water-bodies-radio'); 
     const homesteadsRadio = document.getElementById('homesteads-radio'); 
     const forestsRadio = document.getElementById('forests-radio'); 
-    const administrativeViewRadio = document.getElementById('administrative-radio'); // NEW
-    const satelliteViewRadio = document.getElementById('satellite-radio');         // NEW
     const statsSidebar = document.getElementById('stats-sidebar');
     const sidebarToggleButton = document.getElementById('sidebar-toggle-button'); 
+    // NEW: Base Layer Radio Buttons
+    const adminViewRadio = document.getElementById('admin-view-radio');
+    const satViewRadio = document.getElementById('sat-view-radio');
 
     // --- Core Functions ---
 
@@ -313,26 +315,24 @@ document.addEventListener('DOMContentLoaded', () => {
         return [topBar.offsetHeight + 10, sidebarWidth]; // [Y offset, X offset]
     }
     
-    /**
-     * Clears all layers except the current base tile layer.
-     */
-    function clearOverlayLayers(layerName = 'all') {
+
+    function clearLayer(layerName = 'all') {
         if (layerName === 'current' || layerName === 'all') {
             if (currentLayer) {
-                map.removeLayer(currentLayer);
+                overlayGroup.removeLayer(currentLayer); // Use overlayGroup
                 currentLayer = null;
             }
         }
         if (layerName === 'fra-claims' || layerName === 'all') {
             if (fraClaimsLayer) {
-                map.removeLayer(fraClaimsLayer);
+                overlayGroup.removeLayer(fraClaimsLayer); // Use overlayGroup
                 fraClaimsLayer = null;
             }
         }
         // Clear Thematic Layer
         if (layerName === 'thematic' || layerName === 'all') {
             if (thematicLayer) {
-                map.removeLayer(thematicLayer);
+                overlayGroup.removeLayer(thematicLayer); // Use overlayGroup
                 thematicLayer = null;
             }
         }
@@ -345,64 +345,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Switches the main base layer of the map.
+     * Toggles the visibility of the statistics sidebar and invalidates the map size.
      */
-    function switchMapView(viewType) {
-        // Clear all overlays when switching the base map
-        clearOverlayLayers();
+    function toggleStatsSidebar(show) {
+        const stateSelected = stateDropdown.value !== "";
+        const districtSelected = districtDropdown.value !== "";
         
-        // Disable overlay selection when in Satellite view
-        document.querySelectorAll('input[name="layer-type"]').forEach(radio => {
-             radio.disabled = (viewType === 'satellite');
-        });
-        document.getElementById('date-selector-group').style.opacity = (viewType === 'satellite') ? 0.5 : 1;
+        const showSidebar = show && stateSelected && !districtSelected; 
 
-        // Hide stats sidebar on Satellite view if it's currently open
-        if (viewType === 'satellite') {
-            toggleStatsSidebar(false);
+        document.body.classList.toggle('stats-open', showSidebar);
+        statsSidebar.classList.toggle('hidden', !showSidebar);
+
+        if (sidebarToggleButton) {
+            sidebarToggleButton.setAttribute('aria-expanded', showSidebar);
         }
-
-
-        if (viewType === 'satellite') {
-            // Remove current base layer
-            map.removeLayer(currentBaseLayer);
-            
-            // Create and add the static satellite image layer
-            satelliteLayer = L.imageOverlay(SATELLITE_IMAGE_URL, GLOBAL_BOUNDS, {
-                opacity: 1,
-                attribution: 'Map Data Source (Static)'
-            }).addTo(map);
-            currentBaseLayer = satelliteLayer;
-            
-            // Center the view roughly over the image boundaries
-            map.fitBounds(GLOBAL_BOUNDS, { maxZoom: 5.5 });
-
-            updateStatus('Satellite View loaded. Administrative layers are disabled.', false);
-
-        } else { // administrative view
-            if (satelliteLayer) {
-                map.removeLayer(satelliteLayer);
-                satelliteLayer = null;
-            }
-            // Ensure OSM layer is active and set as base layer
-            map.addLayer(osmLayer);
-            currentBaseLayer = osmLayer;
-
-            updateStatus('Administrative View selected. Reloading data layers...', false);
-            
-            // Re-render the previously selected layers (boundaries or claims)
-            const stateKey = stateDropdown.value;
-            if (stateKey) {
-                const districtName = districtDropdown.value;
-                // Revert to boundaries being checked by default if another overlay type was selected
-                boundariesRadio.checked = true; 
-                renderBoundaries(stateKey, districtName || null);
-            } else {
-                updateStatus('Welcome to the FRA Atlas. Select a state to begin.');
-            }
-        }
+        
+        setTimeout(() => map.invalidateSize(), 300);
     }
-
 
     /**
      * Renders the statistics content.
@@ -440,8 +399,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderFraClaims(stateKey, districtName) {
-        clearOverlayLayers('fra-claims'); 
-        clearOverlayLayers('thematic');
+        clearLayer('fra-claims'); 
+        clearLayer('thematic');
 
         if (!stateKey) return;
         
@@ -467,6 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const onEachFeature = (feature, layer) => {
             if (feature.properties) {
                 const props = feature.properties;
+                // MODIFIED: Removed GP and Tehsil from popup
                 const popupContent = `
                     <strong>FRA Claim/Title Details</strong>
                     <hr style="margin: 5px 0; border-color: #ddd;">
@@ -477,7 +437,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     5. Area (Hectares): ${props.Area_Hectares}<br>
                     6. Title No.: ${props.Title_No}<br>
                     7. Village/Gram Sabha: <strong>${props.Village || 'N/A'}</strong><br>
-                    
                     <hr style="margin: 5px 0; border-color: #ddd;">
                     <a href="#" class="dss-button" data-claim-id="${props.id}">
                         <button style="background-color: #f0ad4e; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-weight: bold;">Run DSS Engine</button>
@@ -499,7 +458,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             },
             onEachFeature: onEachFeature
-        }).addTo(map);
+        });
+        
+        // Add to the overlay group, not directly to the map
+        overlayGroup.addLayer(fraClaimsLayer);
 
         updateStatus(`Displaying ${filteredClaims.length} FRA claim polygons for ${districtName || stateName}.`, false);
         
@@ -527,9 +489,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function renderBoundaries(stateKey, districtName) {
-        clearOverlayLayers('fra-claims'); 
-        clearOverlayLayers('thematic'); 
-        clearOverlayLayers('current'); 
+        clearLayer('fra-claims'); 
+        clearLayer('thematic'); 
+        clearLayer('current'); 
 
         if (!stateKey) return;
         
@@ -578,7 +540,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 };
 
-                currentLayer = L.geoJSON(data, { style: styleFeature }).addTo(map);
+                currentLayer = L.geoJSON(data, { style: styleFeature });
+                overlayGroup.addLayer(currentLayer); // Add to the overlay group
 
                 const bounds = targetBounds || currentLayer.getBounds();
                 
@@ -598,8 +561,8 @@ document.addEventListener('DOMContentLoaded', () => {
      * Renders thematic layers (Agricultural Land, Water Bodies, Homesteads, Forests).
      */
     function renderThematicLayer(stateKey, layerType) {
-        clearOverlayLayers('fra-claims');
-        clearOverlayLayers('thematic');
+        clearLayer('fra-claims');
+        clearLayer('thematic');
 
         // Rule: Only allow thematic layers for Madhya Pradesh
         if (stateKey !== 'madhya-pradesh') {
@@ -644,7 +607,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Keep the State boundary layer on the map, but remove district highlight
         if (currentLayer) {
-            clearOverlayLayers('current');
+            clearLayer('current');
             renderBoundaries(stateKey, null); 
         }
 
@@ -686,7 +649,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
 
-                thematicLayer = featureGroup.addTo(map);
+                thematicLayer = featureGroup;
+                overlayGroup.addLayer(thematicLayer); // Add to the overlay group
 
                 // Fit bounds to the combined thematic layers
                 if (bounds) {
@@ -703,11 +667,54 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
+    /**
+     * NEW: Function to switch between administrative and satellite base layers.
+     * It also manages the visibility of all dynamic overlays.
+     */
+    function switchBaseLayer(layerType) {
+        if (layerType === 'satellite') {
+            if (map.hasLayer(administrativeBaseLayer)) {
+                map.removeLayer(administrativeBaseLayer);
+            }
+            if (!map.hasLayer(satelliteBaseLayer)) {
+                satelliteBaseLayer.addTo(map);
+            }
+            // Hide all dynamic overlays
+            overlayGroup.remove();
+            updateStatus('Switched to Satellite View. Overlays hidden.');
+        } else { // administrative
+            if (map.hasLayer(satelliteBaseLayer)) {
+                map.removeLayer(satelliteBaseLayer);
+            }
+            if (!map.hasLayer(administrativeBaseLayer)) {
+                administrativeBaseLayer.addTo(map);
+            }
+            // Show dynamic overlays
+            overlayGroup.addTo(map);
+            updateStatus('Switched to Administrative View. Dynamic layers visible.');
+            // Re-run the current layer if one is selected
+            if (stateDropdown.value) {
+                const layerType = document.querySelector('input[name="layer-type"]:checked').value;
+                const stateKey = stateDropdown.value;
+                const districtName = districtDropdown.value;
+                
+                if (layerType === 'boundaries') {
+                    renderBoundaries(stateKey, districtName || null);
+                } else if (layerType === 'fra-claims') {
+                    renderFraClaims(stateKey, districtName || null);
+                } else {
+                    renderThematicLayer(stateKey, layerType);
+                }
+            }
+        }
+    }
+
 
     // --- State and District Logic ---
 
     function handleStateSelection(stateKey) {
-        clearOverlayLayers();
+        // Clear all overlays, not the base map
+        clearLayer(); 
         districtDropdown.innerHTML = '<option value="" disabled selected>-- Select a District --</option>';
         districtDropdown.disabled = true;
 
@@ -729,8 +736,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         districtDropdown.disabled = false;
         
-        // Render the default layer (boundaries)
-        renderBoundaries(stateKey, null); 
+        // Render the default layer (boundaries) only if in administrative view
+        if (adminViewRadio.checked) {
+            renderBoundaries(stateKey, null); 
+        } else {
+            updateStatus(`State ${config.name} selected. Switch to Administrative View to see boundaries or claims.`);
+        }
         
         // Set sidebar state: If top bar is collapsed, the sidebar should open now (State-only view).
         const topBarCollapsed = topBar.classList.contains('collapsed');
@@ -745,17 +756,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // Only render boundaries or FRA claims on district selection, unless a thematic layer is already active.
-        if (boundariesRadio.checked) {
-            renderBoundaries(stateKey, districtName);
-        } else if (fraClaimsRadio.checked) {
-            renderFraClaims(stateKey, districtName);
-        } else {
-             // If a thematic layer is selected, revert to boundaries when district changes
-            boundariesRadio.checked = true;
-            renderBoundaries(stateKey, districtName);
+        if (adminViewRadio.checked) {
+            const layerType = document.querySelector('input[name="layer-type"]:checked').value;
+            if (boundariesRadio.checked) {
+                renderBoundaries(stateKey, districtName);
+            } else if (fraClaimsRadio.checked) {
+                renderFraClaims(stateKey, districtName);
+            } else {
+                // If a thematic layer is selected, revert to boundaries when district changes
+                boundariesRadio.checked = true;
+                renderBoundaries(stateKey, districtName);
+            }
         }
-
+        
         // Rule: When a district is selected, hide the sidebar.
         toggleStatsSidebar(false); 
     }
@@ -769,20 +782,8 @@ document.addEventListener('DOMContentLoaded', () => {
         option.textContent = stateData[key].name;
         stateDropdown.appendChild(option);
     });
-    
-    // Set map view to administrative by default
-    administrativeViewRadio.checked = true;
-
 
     // --- Event Listeners ---
-
-    // NEW: Top-Level Map View Radio Change
-    document.querySelectorAll('input[name="map-view"]').forEach(radio => {
-        radio.addEventListener('change', (event) => {
-            switchMapView(event.target.value);
-        });
-    });
-
 
     // Top Bar Collapse Toggle (Controls control panel and sidebar visibility based on rules)
     collapseButton.addEventListener('click', () => {
@@ -793,20 +794,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setTimeout(() => {
             map.invalidateSize();
-            // Fit to the appropriate layer, or default to the map center if in satellite view
-            const layerToFit = thematicLayer || fraClaimsLayer || currentLayer || (satelliteLayer ? satelliteLayer : map.getCenter());
-            
-            if (layerToFit instanceof L.LayerGroup || layerToFit instanceof L.Layer) {
-                 map.fitBounds(layerToFit.getBounds(), {
-                     paddingTopLeft: getFitBoundsPadding(),
-                     animate: true 
-                 });
-            } else if (layerToFit instanceof L.LatLng) {
-                // If it's a LatLng object (like when satellite layer is active), just pan/zoom
-                map.setView(layerToFit, map.getZoom()); 
+            // Only try to fit bounds if administrative view is active
+            if (adminViewRadio.checked) {
+                const layerToFit = thematicLayer || fraClaimsLayer || currentLayer; 
+                if (layerToFit) {
+                     map.fitBounds(layerToFit.getBounds(), {
+                         paddingTopLeft: getFitBoundsPadding(),
+                         animate: true 
+                     });
+                }
             }
         }, 300); 
     });
+
+    // NEW: Base Layer Radio Button Change
+    adminViewRadio.addEventListener('change', () => switchBaseLayer('administrative'));
+    satViewRadio.addEventListener('change', () => switchBaseLayer('satellite'));
+
 
     // NEW: Sidebar Manual Toggle Button
     sidebarToggleButton.addEventListener('click', () => {
@@ -844,6 +848,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 boundariesRadio.checked = true;
                 return;
             }
+            
+            // If satellite view is active, switch to administrative first
+            if (satViewRadio.checked) {
+                adminViewRadio.checked = true;
+                switchBaseLayer('administrative');
+            }
+
 
             const thematicLayers = ['crop-land', 'water-bodies', 'homesteads', 'forests']; 
 
