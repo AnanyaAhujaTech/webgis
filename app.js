@@ -7,7 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-    }).addTo(map);
+    });
+    // Placeholder for the Satellite/Terrain image URL.
+    // NOTE: You must replace 'satellite_image.png' with the actual path to your image file (e.g., a static image of rugged terrain).
+    const SATELLITE_IMAGE_URL = 'satellite_image.png'; 
+    const GLOBAL_BOUNDS = [[18.0, 72.0], [27.0, 84.0]]; // Approximate bounds for India/MP region
+
+    map.addLayer(osmLayer);
 
     let satelliteLayer = null; // To hold the static image layer
     let currentBaseLayer = osmLayer;
@@ -158,10 +164,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Area_Hectares": `${areaHectares}`,
                 "Title_No": status === 'Approved' ? `TN-${id}` : 'N/A',
                 "Name_Holders": nameHolder,
-                // Using the random village name
                 "Village": randomVillageName, 
-                "GP": `Gram Panchayat ${Math.floor(id / 10) + 1}`, // Kept for generation but removed from popup
-                "Tehsil": `Tehsil ${Math.floor(id / 20) + 1}` // Kept for generation but removed from popup
+                "GP": `Gram Panchayat ${Math.floor(id / 10) + 1}`,
+                "Tehsil": `Tehsil ${Math.floor(id / 20) + 1}`
             },
             "geometry": {
                 "type": "Polygon",
@@ -228,7 +233,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- FRA Claims Data ---
-    // Start ID for scattered claims will be around 1000, leaving 101-999 for Burhanpur and other blocks
+    
+    // IDs to be removed from the final GeoJSON
+    const CLAIMS_TO_REMOVE = [101, 102, 112]; 
+
     let startIdCounter = 101;
 
     const burhanpurClaims = [
@@ -247,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "type": "FeatureCollection",
         "features": [
             // Filter out specific claims: 101, 102, 112
-            ...burhanpurClaims.filter(f => ![101, 102, 112].includes(f.properties.id)),
+            ...burhanpurClaims.filter(f => !CLAIMS_TO_REMOVE.includes(f.properties.id)),
             
             // Scattered claims across the rest of MP
             ...mpScatteredClaims,
@@ -340,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * Switches the main base layer of the map.
      */
     function switchMapView(viewType) {
-        // Clear all overlays when switching the base map, as they only make sense on Admin view
+        // Clear all overlays when switching the base map
         clearOverlayLayers();
         
         // Disable overlay selection when in Satellite view
@@ -349,23 +357,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById('date-selector-group').style.opacity = (viewType === 'satellite') ? 0.5 : 1;
 
+        // Hide stats sidebar on Satellite view if it's currently open
+        if (viewType === 'satellite') {
+            toggleStatsSidebar(false);
+        }
+
 
         if (viewType === 'satellite') {
+            // Remove current base layer
             map.removeLayer(currentBaseLayer);
             
-            // Define the global boundaries for the static image (bounds of the entire map data)
-            const globalBounds = [[18.0, 72.0], [27.0, 84.0]]; 
-            
-            // Use a placeholder image URL for the "rugged terrain" satellite view
-            // NOTE: Replace 'satellite_image.png' with the path to your actual image file.
-            satelliteLayer = L.imageOverlay('satellite_image.png', globalBounds, {
+            // Create and add the static satellite image layer
+            satelliteLayer = L.imageOverlay(SATELLITE_IMAGE_URL, GLOBAL_BOUNDS, {
                 opacity: 1,
                 attribution: 'Map Data Source (Static)'
             }).addTo(map);
             currentBaseLayer = satelliteLayer;
             
             // Center the view roughly over the image boundaries
-            map.fitBounds(globalBounds, { maxZoom: 5.5 });
+            map.fitBounds(GLOBAL_BOUNDS, { maxZoom: 5.5 });
 
             updateStatus('Satellite View loaded. Administrative layers are disabled.', false);
 
@@ -374,6 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 map.removeLayer(satelliteLayer);
                 satelliteLayer = null;
             }
+            // Ensure OSM layer is active and set as base layer
             map.addLayer(osmLayer);
             currentBaseLayer = osmLayer;
 
@@ -391,6 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+
 
     /**
      * Renders the statistics content.
@@ -465,6 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     5. Area (Hectares): ${props.Area_Hectares}<br>
                     6. Title No.: ${props.Title_No}<br>
                     7. Village/Gram Sabha: <strong>${props.Village || 'N/A'}</strong><br>
+                    
                     <hr style="margin: 5px 0; border-color: #ddd;">
                     <a href="#" class="dss-button" data-claim-id="${props.id}">
                         <button style="background-color: #f0ad4e; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-weight: bold;">Run DSS Engine</button>
