@@ -864,13 +864,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dummy listeners for the new filter dropdowns (for completeness)
     villageDropdown.addEventListener('change', () => {
-        updateStatus(`Placeholder: Filtering by Village: ${villageDropdown.value}. Actual filtering is not yet implemented.`, false);
+        updateStatus(`Filtering by Village: ${villageDropdown.value}. Actual filtering is not yet implemented.`, false);
     });
     tehsilDropdown.addEventListener('change', () => {
-        updateStatus(`Placeholder: Filtering by Tehsil: ${tehsilDropdown.value}. Actual filtering is not yet implemented.`, false);
+        updateStatus(`Filtering by Tehsil: ${tehsilDropdown.value}. Actual filtering is not yet implemented.`, false);
     });
     tribalGroupDropdown.addEventListener('change', () => {
-        updateStatus(`Placeholder: Filtering by Tribal Group: ${tribalGroupDropdown.value}. Actual filtering is not yet implemented.`, false);
+        updateStatus(`Filtering by Tribal Group: ${tribalGroupDropdown.value}. Actual filtering is not yet implemented.`, false);
     });
     
     updateStatus('Welcome to the FRA Atlas. Select a state to begin.');
