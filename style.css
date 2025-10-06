@@ -12,7 +12,7 @@ html, body {
     top: 0;
     left: 0;
     width: 100%;
-    background-color: #228b22; /* Forest Green */
+    background-color: #228b22; /* Restored green background */
     color: #fff;
     padding: 5px 60px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -33,7 +33,6 @@ html, body {
     justify-content: center; /* Center the title */
     align-items: center;
     position: relative;
-    /* FIX: Ensure header content is vertically centered in the collapsed bar */
     height: 100%; 
 }
 
@@ -46,11 +45,8 @@ html, body {
 
 #collapse-button {
     position: absolute;
-    /* FIX: Set right to 60px to align the button relative to the padding, 
-        making the center of the title appear visually correct. */
     right: 60px; 
     top: 50%;
-    /* FIX: Remove translateY to allow the icon's container to be centered */
     transform: translateY(-50%); 
     background: none;
     border: none;
@@ -58,11 +54,9 @@ html, body {
     font-size: 1.2rem; /* Smaller icon */
     cursor: pointer;
     transition: transform 0.3s ease;
-    /* NEW: Removed fixed height to allow vertical centering by 'top: 50%' */
 }
 
 #top-bar.collapsed #collapse-button i {
-    /* Only apply the rotation on collapse, not the translate */
     transform: rotate(180deg);
 }
 
@@ -74,7 +68,7 @@ html, body {
 }
 
 #top-bar:not(.collapsed) #control-content {
-    /* INCREASED EXPANDED HEIGHT: Adjusted from 280px to 310px */
+    /* MAX HEIGHT: Adjusted to 310px */
     max-height: 310px; 
     opacity: 1;
     margin-top: 5px; /* Reduced spacing */
@@ -83,6 +77,14 @@ html, body {
 
 .control-group {
     margin-bottom: 5px; /* Reduced vertical spacing */
+}
+
+/* FIX: Ensure dropdown groups are laid out vertically for label and input/select */
+.control-group:not(.radio-group) {
+    display: flex;
+    flex-direction: column; /* Stacks label on top of input/select */
+    width: 300px; /* Constrains width for better layout */
+    max-width: 100%;
 }
 
 .radio-group {
@@ -95,7 +97,7 @@ html, body {
     margin-right: 5px;
 }
 
-/* New style for the top-level radio group to ensure proper spacing */
+/* New style for the top-level map view radio group to ensure proper spacing */
 .map-view-select {
     margin-bottom: 10px;
     padding-bottom: 5px;
@@ -103,7 +105,8 @@ html, body {
 
 #date-selector-group {
     margin-left: 15px;
-    display: flex;
+    /* FIX: Ensure date selector group contents are aligned correctly (inline) */
+    display: flex; 
     align-items: center;
 }
 
@@ -111,6 +114,7 @@ html, body {
     margin-right: 5px;
     margin-bottom: 0;
     font-weight: normal;
+    display: inline; /* Makes date label flow correctly */
 }
 
 label {
@@ -130,6 +134,7 @@ label {
     color: #333;
     transition: all 0.3s ease;
     font-size: 0.9em;
+    width: 100%; /* Ensures dropdowns fill the width of their parent .control-group */
 }
 
 #district-dropdown:disabled {
@@ -157,9 +162,9 @@ label {
     transition: padding-top 0.3s ease, margin-right 0.3s ease;
 }
 
-/* Adjusted to new expanded height: Adjusted from 270px to 300px */
+/* Adjusted to new expanded height: Adjusted to 300px */
 #top-bar:not(.collapsed) + #map { 
-    padding-top: 300px;
+    padding-top: 340px; /* Increased slightly for safety after CSS fixes */
 }
 
 /* --- Statistics Sidebar Styling --- */
@@ -260,8 +265,14 @@ label {
 
 /* Responsive adjustment */
 @media (max-width: 768px) {
+    #top-bar {
+        padding: 5px 10px; /* Reduced horizontal padding on mobile */
+    }
+    #collapse-button {
+        right: 10px; /* Positioned correctly relative to new padding */
+    }
     #top-bar:not(.collapsed) + #map {
-        padding-top: 410px; /* Adjusted from 380px for mobile stacked content */
+        padding-top: 410px; 
     }
     #stats-sidebar {
         width: 100%;
