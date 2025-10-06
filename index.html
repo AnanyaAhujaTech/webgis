@@ -1,91 +1,99 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>WebGIS — State and District Selector</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WebGIS — State and District Selector</title>
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div id="top-bar" class="collapsed">
-        <div id="top-bar-header">
-            <h1>FRA Atlas</h1>
-            <button id="collapse-button" aria-expanded="false" aria-controls="control-content">
-                <i class="fas fa-chevron-up"></i>
-            </button>
-        </div>
+    <div id="top-bar" class="collapsed">
+        <div id="top-bar-header">
+            <h1>FRA Atlas</h1>
+            <button id="collapse-button" aria-expanded="false" aria-controls="control-content">
+                <i class="fas fa-chevron-up"></i>
+            </button>
+        </div>
 
-        <div id="control-content">
-            <div class="control-group">
-                <label for="state-dropdown">Select State:</label>
-                <select id="state-dropdown" name="state">
-                    <option value="" disabled selected>-- Choose a State --</option>
-                </select>
+        <div id="control-content">
+            <div class="control-group radio-group map-view-select">
+                <input type="radio" id="administrative-radio" name="map-view" value="administrative" checked>
+                <label for="administrative-radio" style="display: inline;">Administrative View</label>
+                <input type="radio" id="satellite-radio" name="map-view" value="satellite">
+                <label for="satellite-radio" style="display: inline;">Satellite View</label>
             </div>
-
-            <div class="control-group">
-                <label for="district-dropdown">Select District:</label>
-                <select id="district-dropdown" name="district" disabled>
-                    <option value="" disabled selected>-- Select a State First --</option>
-                </select>
-            </div>
-
             <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 5px 0;">
 
-            <div class="control-group radio-group">
-                <input type="radio" id="boundaries-radio" name="layer-type" value="boundaries" checked>
-                <label for="boundaries-radio" style="display: inline;">State/District Boundaries</label>
-            </div>
+            <div class="control-group">
+                <label for="state-dropdown">Select State:</label>
+                <select id="state-dropdown" name="state">
+                    <option value="" disabled selected>-- Choose a State --</option>
+                </select>
+            </div>
 
-            <div class="control-group radio-group">
-                <input type="radio" id="fra-claims-radio" name="layer-type" value="fra-claims">
-                <label for="fra-claims-radio" style="display: inline;">Areas claimed under FRA</label>
-                <div id="date-selector-group">
-                    <label for="claim-date">Data Date:</label>
-                    <input type="date" id="claim-date" name="claim-date" value="2025-07-31" style="width: auto;">
-                </div>
-            </div>
+            <div class="control-group">
+                <label for="district-dropdown">Select District:</label>
+                <select id="district-dropdown" name="district" disabled>
+                    <option value="" disabled selected>-- Select a State First --</option>
+                </select>
+            </div>
 
-            <div class="control-group radio-group">
-                <input type="radio" id="crop-land-radio" name="layer-type" value="crop-land">
-                <label for="crop-land-radio" style="display: inline;">Agricultural Land</label>
-            </div>
-            
-            <div class="control-group radio-group">
-                <input type="radio" id="water-bodies-radio" name="layer-type" value="water-bodies">
-                <label for="water-bodies-radio" style="display: inline;">Water Bodies</label>
-            </div>
-            
-            <div class="control-group radio-group">
-                <input type="radio" id="homesteads-radio" name="layer-type" value="homesteads">
-                <label for="homesteads-radio" style="display: inline;">Homesteads</label>
-            </div>
-            
-            <div class="control-group radio-group">
-                <input type="radio" id="forests-radio" name="layer-type" value="forests">
-                <label for="forests-radio" style="display: inline;">Forest Cover (Land Use)</label>
-            </div>
-            
-            <div id="status-message" class="status-message"></div>
-        </div>
-    </div>
-    
-    <div id="stats-sidebar" class="hidden">
-        <button id="sidebar-toggle-button" aria-expanded="false" aria-controls="statistics-panel">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        <h2>Statistics (up to 31.7.2025)</h2>
-        <div id="statistics-panel">
-            <p>Select a state to view statistics.</p>
-        </div>
-    </div>
+            <hr style="border-color: rgba(255, 255, 255, 0.5); margin: 5px 0;">
 
-    <div id="map"></div>
+            <div class="control-group radio-group">
+                <input type="radio" id="boundaries-radio" name="layer-type" value="boundaries" checked>
+                <label for="boundaries-radio" style="display: inline;">State/District Boundaries</label>
+            </div>
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="app.js"></script>
+            <div class="control-group radio-group">
+                <input type="radio" id="fra-claims-radio" name="layer-type" value="fra-claims">
+                <label for="fra-claims-radio" style="display: inline;">Areas claimed under FRA</label>
+                <div id="date-selector-group">
+                    <label for="claim-date">Data Date:</label>
+                    <input type="date" id="claim-date" name="claim-date" value="2025-07-31" style="width: auto;">
+                </div>
+            </div>
+
+            <div class="control-group radio-group">
+                <input type="radio" id="crop-land-radio" name="layer-type" value="crop-land">
+                <label for="crop-land-radio" style="display: inline;">Agricultural Land</label>
+            </div>
+            
+            <div class="control-group radio-group">
+                <input type="radio" id="water-bodies-radio" name="layer-type" value="water-bodies">
+                <label for="water-bodies-radio" style="display: inline;">Water Bodies</label>
+            </div>
+            
+            <div class="control-group radio-group">
+                <input type="radio" id="homesteads-radio" name="layer-type" value="homesteads">
+                <label for="homesteads-radio" style="display: inline;">Homesteads</label>
+            </div>
+            
+            <div class="control-group radio-group">
+                <input type="radio" id="forests-radio" name="layer-type" value="forests">
+                <label for="forests-radio" style="display: inline;">Forest Cover (Land Use)</label>
+            </div>
+            
+            <div id="status-message" class="status-message"></div>
+        </div>
+    </div>
+    
+    <div id="stats-sidebar" class="hidden">
+        <button id="sidebar-toggle-button" aria-expanded="false" aria-controls="statistics-panel">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <h2>Statistics (up to 31.7.2025)</h2>
+        <div id="statistics-panel">
+            <p>Select a state to view statistics.</p>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
