@@ -17,12 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Overlay Groups ---
-    // Use a FeatureGroup to manage all dynamic overlays (boundaries, claims, thematic)
     const overlayGroup = L.featureGroup().addTo(map);
 
-    let currentLayer = null; // State or District GeoJSON layer (Boundaries)
-    let fraClaimsLayer = null; // Layer for the small polygons (FRA Claims)
-    let thematicLayer = null; // Tracks all grouped thematic layers
+    let currentLayer = null; 
+    let fraClaimsLayer = null; 
+    let thematicLayer = null; 
+    let fraClaimsGeoJSON = {}; // Will hold the dynamically generated claims
 
     // --- Configuration & Data ---
     const stateData = {
@@ -118,9 +118,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     /**
-     * Helper function to get a random item from an array.
+     * Seedable PRNG for consistent claim generation
      */
-    const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    let seed = 1;
+    function pseudoRandom() {
+        // Simple linear congruential generator (LCG)
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+    }
+
+    /**
+     * Helper function to get a random item from an array (using PRNG).
+     */
+    const getRandomElement = (arr) => arr[Math.floor(pseudoRandom() * arr.length)];
 
     /**
      * Generates a square GeoJSON polygon feature centered at [lat, lon].
@@ -139,9 +149,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
         
         // Use a random value to determine if it's Individual or Community, unless overridden
-        const claimType = claimTypeOverride || (Math.random() < 0.6 ? 'Individual' : 'Community');
+        const claimType = claimTypeOverride || (pseudoRandom() < 0.6 ? 'Individual' : 'Community');
         
-        const areaHectares = (Math.random() * (10.0 - 0.5) + 0.5).toFixed(2); // 0.5 to 10.0 hectares
+        const areaHectares = (pseudoRandom() * (10.0 - 0.5) + 0.5).toFixed(2); // 0.5 to 10.0 hectares
         
         // Use a random village name for the location
         const randomVillageName = getRandomElement(villageNamesMP);
@@ -154,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
             nameHolder = `Gram Sabha - ${randomVillageName} Village Cluster ${Math.floor(id / 5) + 1}`;
         }
         
-        const status = (Math.random() < 0.7) ? 'Approved' : 'Claimed/Pending'; // 70% chance of being approved for diversity
+        const status = (pseudoRandom() < 0.7) ? 'Approved' : 'Claimed/Pending'; // 70% chance of being approved for diversity
 
         return {
             "type": "Feature",
@@ -167,10 +177,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Area_Hectares": `${areaHectares}`,
                 "Title_No": status === 'Approved' ? `TN-${id}` : 'N/A',
                 "Name_Holders": nameHolder,
-                // Using the random village name
                 "Village": randomVillageName, 
-                "GP": `Gram Panchayat ${Math.floor(id / 10) + 1}`,
-                "Tehsil": `Tehsil ${Math.floor(id / 20) + 1}`
+                "GP": `Gram Panchayat ${Math.floor(id / 10) + 1}`, // Kept in properties for consistency, just removed from popup
+                "Tehsil": `Tehsil ${Math.floor(id / 20) + 1}` // Kept in properties for consistency, just removed from popup
             },
             "geometry": {
                 "type": "Polygon",
@@ -181,7 +190,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Generates claims for a single district with a specific count.
-     * MODIFIED: Removed special spread for Burhanpur
      */
     function generateDistrictClaims(district, countIndividual, countCommunity, startId, baseId) {
         const claims = [];
@@ -195,8 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Generate Individual Claims
         for (let i = 0; i < countIndividual; i++) {
             claims.push(createDummySquarePolygon(
-                lat + (Math.random() * spread - spread / 2),
-                lon + (Math.random() * spread - spread / 2),
+                lat + (pseudoRandom() * spread - spread / 2),
+                lon + (pseudoRandom() * spread - spread / 2),
                 'Madhya Pradesh', 
                 district, 
                 baseId + id++, 
@@ -207,8 +215,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Generate Community Claims
         for (let i = 0; i < countCommunity; i++) {
             claims.push(createDummySquarePolygon(
-                lat + (Math.random() * spread - spread / 2),
-                lon + (Math.random() * spread - spread / 2),
+                lat + (pseudoRandom() * spread - spread / 2),
+                lon + (pseudoRandom() * spread - spread / 2),
                 'Madhya Pradesh', 
                 district, 
                 baseId + id++, 
@@ -236,88 +244,88 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return claims;
     }
-
-    // --- FRA Claims Data ---
-    // Start ID for scattered claims will be around 1000, leaving 101-999 for Burhanpur and other blocks
-    let startIdCounter = 101;
-    const burhanpurCenterLat = 21.3;
-    const burhanpurCenterLon = 76.2;
-    const burhanpurDistrictName = 'Burhanpur';
-
-    // MODIFIED: Manually defined Burhanpur claims (20 total) to ensure they are inside the boundary.
-    const burhanpurClaims = [
-        // Individual Claims (IDs 101-110, excluding 101 and 102)
-        createDummySquarePolygon(burhanpurCenterLat + 0.15, burhanpurCenterLon + 0.05, 'Madhya Pradesh', burhanpurDistrictName, 103, 'Individual'),
-        createDummySquarePolygon(burhanpurCenterLat + 0.05, burhanpurCenterLon + 0.1, 'Madhya Pradesh', burhanpurDistrictName, 104, 'Individual'),
-        createDummySquarePolygon(burhanpurCenterLat - 0.05, burhanpurCenterLon - 0.05, 'Madhya Pradesh', burhanpurDistrictName, 105, 'Individual'),
-        createDummySquarePolygon(burhanpurCenterLat + 0.0, burhanpurCenterLon + 0.0, 'Madhya Pradesh', burhanpurDistrictName, 106, 'Individual'),
-        createDummySquarePolygon(burhanpurCenterLat + 0.08, burhanpurCenterLon + 0.12, 'Madhya Pradesh', burhanpurDistrictName, 107, 'Individual'), // Adjusted 107
-        createDummySquarePolygon(burhanpurCenterLat - 0.1, burhanpurCenterLon + 0.03, 'Madhya Pradesh', burhanpurDistrictName, 108, 'Individual'),
-        createDummySquarePolygon(burhanpurCenterLat + 0.1, burhanpurCenterLon - 0.05, 'Madhya Pradesh', burhanpurDistrictName, 109, 'Individual'),
-        createDummySquarePolygon(burhanpurCenterLat - 0.15, burhanpurCenterLon - 0.1, 'Madhya Pradesh', burhanpurDistrictName, 110, 'Individual'),
+    
+    /**
+     * CORE FUNCTION: Generates all FRA claims and stores them in fraClaimsGeoJSON.
+     */
+    function generateAllFraClaims(dateSeed) {
+        // Set the seed based on the date string to ensure the same date produces the same random results
+        seed = dateSeed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) + 1;
         
-        // Community Claims (IDs 111-120, excluding 112)
-        createDummySquarePolygon(burhanpurCenterLat + 0.1, burhanpurCenterLon + 0.1, 'Madhya Pradesh', burhanpurDistrictName, 111, 'Community'),
-        createDummySquarePolygon(burhanpurCenterLat - 0.08, burhanpurCenterLon - 0.12, 'Madhya Pradesh', burhanpurDistrictName, 113, 'Community'),
-        createDummySquarePolygon(burhanpurCenterLat + 0.03, burhanpurCenterLon - 0.15, 'Madhya Pradesh', burhanpurDistrictName, 114, 'Community'),
-        createDummySquarePolygon(burhanpurCenterLat - 0.0, burhanpurCenterLon + 0.15, 'Madhya Pradesh', burhanpurDistrictName, 115, 'Community'),
-        createDummySquarePolygon(burhanpurCenterLat - 0.12, burhanpurCenterLon + 0.08, 'Madhya Pradesh', burhanpurDistrictName, 116, 'Community'), // Adjusted 116
-        createDummySquarePolygon(burhanpurCenterLat + 0.05, burhanpurCenterLon - 0.0, 'Madhya Pradesh', burhanpurDistrictName, 117, 'Community'),
-        createDummySquarePolygon(burhanpurCenterLat - 0.15, burhanpurCenterLon + 0.15, 'Madhya Pradesh', burhanpurDistrictName, 118, 'Community'),
-        createDummySquarePolygon(burhanpurCenterLat + 0.12, burhanpurCenterLon + 0.02, 'Madhya Pradesh', burhanpurDistrictName, 119, 'Community'),
-        createDummySquarePolygon(burhanpurCenterLat - 0.0, burhanpurCenterLon - 0.08, 'Madhya Pradesh', burhanpurDistrictName, 120, 'Community'),
+        let startIdCounter = 101;
+        const burhanpurCenterLat = 21.3;
+        const burhanpurCenterLon = 76.2;
+        const burhanpurDistrictName = 'Burhanpur';
         
-        // Add back the required number of claims to reach 20 total, using new IDs 121, 122, 123
-        createDummySquarePolygon(burhanpurCenterLat + 0.02, burhanpurCenterLon - 0.02, 'Madhya Pradesh', burhanpurDistrictName, 121, 'Individual'),
-        createDummySquarePolygon(burhanpurCenterLat - 0.02, burhanpurCenterLon + 0.02, 'Madhya Pradesh', burhanpurDistrictName, 122, 'Community'),
-        createDummySquarePolygon(burhanpurCenterLat + 0.18, burhanpurCenterLon + 0.18, 'Madhya Pradesh', burhanpurDistrictName, 123, 'Community'),
-    ];
-    // Filter out the claims explicitly excluded in the last step (which are now missing from the list above)
-    // NOTE: IDs 101, 102, 112 are implicitly removed as they are not generated in the new manual list.
-
-    startIdCounter = 124; // Update counter past manual block
-
-    const mpScatteredClaims = generateScatteredClaims(stateData['madhya-pradesh'].districts, startIdCounter);
-    startIdCounter += mpScatteredClaims.length;
-
-    // Remaining non-MP claims use a fixed base ID (e.g., 3000 series)
-    const nonMpClaimsBaseId = 3000;
-
-    const fraClaimsGeoJSON = {
-        "type": "FeatureCollection",
-        "features": [
-            // Burhanpur claims (now 20 total, manually fixed coordinates)
-            ...burhanpurClaims,
+        // Burhanpur claims (20 total) - Adjusted coordinates for tighter placement
+        const burhanpurClaims = [
+            // Individual Claims (IDs 103-110, excluding 101 and 102)
+            createDummySquarePolygon(burhanpurCenterLat + 0.08, burhanpurCenterLon + 0.05, 'Madhya Pradesh', burhanpurDistrictName, 103, 'Individual'),
+            createDummySquarePolygon(burhanpurCenterLat + 0.02, burhanpurCenterLon + 0.1, 'Madhya Pradesh', burhanpurDistrictName, 104, 'Individual'),
+            createDummySquarePolygon(burhanpurCenterLat - 0.05, burhanpurCenterLon - 0.02, 'Madhya Pradesh', burhanpurDistrictName, 105, 'Individual'),
+            createDummySquarePolygon(burhanpurCenterLat + 0.0, burhanpurCenterLon + 0.0, 'Madhya Pradesh', burhanpurDistrictName, 106, 'Individual'),
+            createDummySquarePolygon(burhanpurCenterLat + 0.04, burhanpurCenterLon + 0.08, 'Madhya Pradesh', burhanpurDistrictName, 107, 'Individual'), 
+            createDummySquarePolygon(burhanpurCenterLat - 0.08, burhanpurCenterLon + 0.01, 'Madhya Pradesh', burhanpurDistrictName, 108, 'Individual'),
+            createDummySquarePolygon(burhanpurCenterLat + 0.06, burhanpurCenterLon - 0.05, 'Madhya Pradesh', burhanpurDistrictName, 109, 'Individual'),
+            createDummySquarePolygon(burhanpurCenterLat - 0.1, burhanpurCenterLon - 0.08, 'Madhya Pradesh', burhanpurDistrictName, 110, 'Individual'),
             
-            // Scattered claims across the rest of MP
-            ...mpScatteredClaims,
+            // Community Claims (IDs 111-120, excluding 112)
+            createDummySquarePolygon(burhanpurCenterLat + 0.06, burhanpurCenterLon + 0.06, 'Madhya Pradesh', burhanpurDistrictName, 111, 'Community'),
+            createDummySquarePolygon(burhanpurCenterLat - 0.08, burhanpurCenterLon - 0.1, 'Madhya Pradesh', burhanpurDistrictName, 113, 'Community'),
+            createDummySquarePolygon(burhanpurCenterLat + 0.01, burhanpurCenterLon - 0.1, 'Madhya Pradesh', burhanpurDistrictName, 114, 'Community'),
+            createDummySquarePolygon(burhanpurCenterLat + 0.0, burhanpurCenterLon + 0.09, 'Madhya Pradesh', burhanpurDistrictName, 115, 'Community'),
+            createDummySquarePolygon(burhanpurCenterLat - 0.08, burhanpurCenterLon + 0.04, 'Madhya Pradesh', burhanpurDistrictName, 116, 'Community'),
+            createDummySquarePolygon(burhanpurCenterLat + 0.03, burhanpurCenterLon - 0.01, 'Madhya Pradesh', burhanpurDistrictName, 117, 'Community'),
+            createDummySquarePolygon(burhanpurCenterLat - 0.1, burhanpurCenterLon + 0.1, 'Madhya Pradesh', burhanpurDistrictName, 118, 'Community'),
+            createDummySquarePolygon(burhanpurCenterLat + 0.09, burhanpurCenterLon + 0.0, 'Madhya Pradesh', burhanpurDistrictName, 119, 'Community'),
+            createDummySquarePolygon(burhanpurCenterLat - 0.01, burhanpurCenterLon - 0.06, 'Madhya Pradesh', burhanpurDistrictName, 120, 'Community'),
             
-            // Telangana - Adilabad (4 Polygons)
-            createDummySquarePolygon(19.40, 78.40, 'Telangana', 'Adilabad', nonMpClaimsBaseId + 1),
-            createDummySquarePolygon(19.70, 78.65, 'Telangana', 'Adilabad', nonMpClaimsBaseId + 2),
-            createDummySquarePolygon(19.55, 78.90, 'Telangana', 'Adilabad', nonMpClaimsBaseId + 3),
-            createDummySquarePolygon(19.85, 78.75, 'Telangana', 'Adilabad', nonMpClaimsBaseId + 4),
+            // Fillers to reach 20 total
+            createDummySquarePolygon(burhanpurCenterLat + 0.05, burhanpurCenterLon - 0.02, 'Madhya Pradesh', burhanpurDistrictName, 121, 'Individual'),
+            createDummySquarePolygon(burhanpurCenterLat - 0.02, burhanpurCenterLon + 0.03, 'Madhya Pradesh', burhanpurDistrictName, 122, 'Community'),
+            createDummySquarePolygon(burhanpurCenterLat + 0.09, burhanpurCenterLon + 0.09, 'Madhya Pradesh', burhanpurDistrictName, 123, 'Community'),
+        ];
 
-            // Tripura - North Tripura (6 Polygons)
-            createDummySquarePolygon(24.30, 91.80, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 10),
-            createDummySquarePolygon(24.45, 92.10, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 11),
-            createDummySquarePolygon(24.20, 92.25, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 12),
-            createDummySquarePolygon(24.50, 91.95, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 13),
-            createDummySquarePolygon(24.35, 92.30, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 14),
-            createDummySquarePolygon(24.55, 92.15, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 15),
+        startIdCounter = 124; // Update counter past manual block
 
-            // Odisha - Bhadrak (7 Polygons)
-            createDummySquarePolygon(21.10, 86.60, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 20),
-            createDummySquarePolygon(20.95, 86.85, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 21),
-            createDummySquarePolygon(21.25, 87.00, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 22),
-            createDummySquarePolygon(21.05, 87.20, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 23),
-            createDummySquarePolygon(21.30, 86.75, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 24),
-            createDummySquarePolygon(20.90, 87.05, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 25),
-            createDummySquarePolygon(21.15, 86.95, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 26)
-        ]
-        // Note: The filter for [101, 102, 112] is no longer needed here as they are not generated above, but keeping it clean:
-        .filter(f => ![101, 102, 112].includes(f.properties.id))
-    };
+        const mpScatteredClaims = generateScatteredClaims(stateData['madhya-pradesh'].districts, startIdCounter);
+        startIdCounter += mpScatteredClaims.length;
+
+        // Remaining non-MP claims use a fixed base ID (e.g., 3000 series)
+        const nonMpClaimsBaseId = 3000;
+
+        fraClaimsGeoJSON = {
+            "type": "FeatureCollection",
+            "features": [
+                ...burhanpurClaims,
+                ...mpScatteredClaims,
+                
+                // Telangana - Adilabad (4 Polygons)
+                createDummySquarePolygon(19.40, 78.40, 'Telangana', 'Adilabad', nonMpClaimsBaseId + 1),
+                createDummySquarePolygon(19.70, 78.65, 'Telangana', 'Adilabad', nonMpClaimsBaseId + 2),
+                createDummySquarePolygon(19.55, 78.90, 'Telangana', 'Adilabad', nonMpClaimsBaseId + 3),
+                createDummySquarePolygon(19.85, 78.75, 'Telangana', 'Adilabad', nonMpClaimsBaseId + 4),
+
+                // Tripura - North Tripura (6 Polygons)
+                createDummySquarePolygon(24.30, 91.80, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 10),
+                createDummySquarePolygon(24.45, 92.10, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 11),
+                createDummySquarePolygon(24.20, 92.25, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 12),
+                createDummySquarePolygon(24.50, 91.95, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 13),
+                createDummySquarePolygon(24.35, 92.30, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 14),
+                createDummySquarePolygon(24.55, 92.15, 'Tripura', 'North Tripura', nonMpClaimsBaseId + 15),
+
+                // Odisha - Bhadrak (7 Polygons)
+                createDummySquarePolygon(21.10, 86.60, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 20),
+                createDummySquarePolygon(20.95, 86.85, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 21),
+                createDummySquarePolygon(21.25, 87.00, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 22),
+                createDummySquarePolygon(21.05, 87.20, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 23),
+                createDummySquarePolygon(21.30, 86.75, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 24),
+                createDummySquarePolygon(20.90, 87.05, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 25),
+                createDummySquarePolygon(21.15, 86.95, 'Odisha', 'Bhadrak', nonMpClaimsBaseId + 26)
+            ]
+            .filter(f => ![101, 102, 112].includes(f.properties.id))
+        };
+    }
     
     // --- DOM Elements ---
     const topBar = document.getElementById('top-bar');
@@ -334,9 +342,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const forestsRadio = document.getElementById('forests-radio'); 
     const statsSidebar = document.getElementById('stats-sidebar');
     const sidebarToggleButton = document.getElementById('sidebar-toggle-button'); 
-    // NEW: Base Layer Radio Buttons
     const adminViewRadio = document.getElementById('admin-view-radio');
     const satViewRadio = document.getElementById('sat-view-radio');
+    const claimDateInput = document.getElementById('claim-date'); // NEW: Date input element
 
     // --- Core Functions ---
 
@@ -352,20 +360,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function clearLayer(layerName = 'all') {
         if (layerName === 'current' || layerName === 'all') {
             if (currentLayer) {
-                overlayGroup.removeLayer(currentLayer); // Use overlayGroup
+                overlayGroup.removeLayer(currentLayer); 
                 currentLayer = null;
             }
         }
         if (layerName === 'fra-claims' || layerName === 'all') {
             if (fraClaimsLayer) {
-                overlayGroup.removeLayer(fraClaimsLayer); // Use overlayGroup
+                overlayGroup.removeLayer(fraClaimsLayer); 
                 fraClaimsLayer = null;
             }
         }
         // Clear Thematic Layer
         if (layerName === 'thematic' || layerName === 'all') {
             if (thematicLayer) {
-                overlayGroup.removeLayer(thematicLayer); // Use overlayGroup
+                overlayGroup.removeLayer(thematicLayer); 
                 thematicLayer = null;
             }
         }
@@ -439,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const stateName = stateData[stateKey].name;
 
-        // Filter claims based on selection
+        // Filter claims based on selection (uses the globally updated fraClaimsGeoJSON)
         const filteredClaims = fraClaimsGeoJSON.features.filter(f => {
             const isStateMatch = f.properties.State === stateName;
             const isDistrictMatch = districtName ? f.properties.District === districtName : true;
@@ -459,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const onEachFeature = (feature, layer) => {
             if (feature.properties) {
                 const props = feature.properties;
-                // MODIFIED: GP and Tehsil removed from popup
+                // Popup content with GP and Tehsil removed
                 const popupContent = `
                     <strong>FRA Claim/Title Details</strong>
                     <hr style="margin: 5px 0; border-color: #ddd;">
@@ -481,7 +489,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         fraClaimsLayer = L.geoJSON(claimsGeoJSON, {
             style: (feature) => {
-                // Individual (Yellow) vs Community (Orange)
                 const isIndividual = feature.properties.Claim_Type === 'Individual';
                 return {
                     color: isIndividual ? '#DAA520' : '#FF4500', 
@@ -493,7 +500,6 @@ document.addEventListener('DOMContentLoaded', () => {
             onEachFeature: onEachFeature
         });
         
-        // Add to the overlay group, not directly to the map
         overlayGroup.addLayer(fraClaimsLayer);
 
         updateStatus(`Displaying ${filteredClaims.length} FRA claim polygons for ${districtName || stateName}.`, false);
@@ -511,10 +517,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (dssButton) {
                 dssButton.addEventListener('click', (event) => {
                     event.preventDefault();
-                    // Placeholder action: Replace '#' with the actual DSS engine URL when ready
                     const claimId = event.target.closest('.dss-button').getAttribute('data-claim-id');
                     alert(`Redirecting to DSS Engine for Claim ID: ${claimId}. (Placeholder action)`);
-                    // window.location.href = `https://your-dss-engine.com/dss?claim_id=${claimId}`;
                 });
             }
         });
@@ -545,7 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return r.json();
             })
             .then(data => {
-                let targetBounds = null; // Will hold the bounds of the state OR selected district
+                let targetBounds = null; 
 
                 if (districtName) {
                     const selectedFeature = data.features.find(f => 
@@ -574,7 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
 
                 currentLayer = L.geoJSON(data, { style: styleFeature });
-                overlayGroup.addLayer(currentLayer); // Add to the overlay group
+                overlayGroup.addLayer(currentLayer); 
 
                 const bounds = targetBounds || currentLayer.getBounds();
                 
@@ -627,7 +631,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 baseStyle = { color: '#FF4500', fillColor: '#FF4500', fillOpacity: 0.7, weight: 1.5 };
                 break;
             case 'forests':
-                // Load two files in the specified order (land_use first)
                 fileNames = ['land_use.geojson', 'green_finally.geojson']; 
                 layerName = 'Forest Cover & Land Use';
                 baseStyle = { color: '#006400', fillColor: '#38761d', fillOpacity: 0.6, weight: 1.5 }; 
@@ -638,7 +641,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateStatus(`Loading thematic layer: ${layerName}...`);
 
-        // Keep the State boundary layer on the map, but remove district highlight
         if (currentLayer) {
             clearLayer('current');
             renderBoundaries(stateKey, null); 
@@ -654,18 +656,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         Promise.all(fetchPromises)
             .then(dataArray => {
-                // Create a feature group to hold all layers for this thematic selection
                 const featureGroup = L.featureGroup();
                 let bounds = null;
 
                 dataArray.forEach((data, index) => {
                     const layerOptions = {
-                        style: (feature) => {
-                            // Use a consistent style for simplicity unless more advanced logic is added later
-                            return baseStyle; 
-                        },
+                        style: (feature) => { return baseStyle; },
                         onEachFeature: (feature, layer) => {
-                            // Simple popup showing just the layer type name
                             const fileTag = fileNames.length > 1 ? ` (File: ${fileNames[index]})` : '';
                             layer.bindPopup(`<strong>Layer:</strong> ${layerName}${fileTag}`);
                         }
@@ -674,7 +671,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const layer = L.geoJSON(data, layerOptions);
                     featureGroup.addLayer(layer);
                     
-                    // Combine bounds
                     if (bounds) {
                         bounds.extend(layer.getBounds());
                     } else {
@@ -683,9 +679,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 thematicLayer = featureGroup;
-                overlayGroup.addLayer(thematicLayer); // Add to the overlay group
+                overlayGroup.addLayer(thematicLayer); 
 
-                // Fit bounds to the combined thematic layers
                 if (bounds) {
                     map.fitBounds(bounds, {
                         paddingTopLeft: getFitBoundsPadding()
@@ -702,7 +697,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Function to switch between administrative and satellite base layers.
-     * It also manages the visibility of all dynamic overlays.
      */
     function switchBaseLayer(layerType) {
         if (layerType === 'satellite') {
@@ -712,23 +706,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!map.hasLayer(satelliteBaseLayer)) {
                 satelliteBaseLayer.addTo(map);
             }
-            // Hide all dynamic overlays
             overlayGroup.remove();
             updateStatus('Switched to Satellite View. Overlays hidden.');
-        } else { // administrative
+        } else { 
             if (map.hasLayer(satelliteBaseLayer)) {
                 map.removeLayer(satelliteBaseLayer);
             }
             if (!map.hasLayer(administrativeBaseLayer)) {
                 administrativeBaseLayer.addTo(map);
             }
-            // Show dynamic overlays
             overlayGroup.addTo(map);
             updateStatus('Switched to Administrative View. Dynamic layers visible.');
-            // Re-run the current layer if one is selected
-            if (stateDropdown.value) {
+
+            // Re-render current selection
+            const stateKey = stateDropdown.value;
+            if (stateKey) {
                 const layerType = document.querySelector('input[name="layer-type"]:checked').value;
-                const stateKey = stateDropdown.value;
                 const districtName = districtDropdown.value;
                 
                 if (layerType === 'boundaries') {
@@ -746,7 +739,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- State and District Logic ---
 
     function handleStateSelection(stateKey) {
-        // Clear all overlays, not the base map
         clearLayer(); 
         districtDropdown.innerHTML = '<option value="" disabled selected>-- Select a District --</option>';
         districtDropdown.disabled = true;
@@ -760,7 +752,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const config = stateData[stateKey];
         renderStatistics(stateKey); 
         
-        // Populate districts
         config.districts.forEach(distName => {
             const option = document.createElement('option');
             option.value = distName;
@@ -769,14 +760,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         districtDropdown.disabled = false;
         
-        // Render the default layer (boundaries) only if in administrative view
         if (adminViewRadio.checked) {
             renderBoundaries(stateKey, null); 
         } else {
             updateStatus(`State ${config.name} selected. Switch to Administrative View to see boundaries or claims.`);
         }
         
-        // Set sidebar state: If top bar is collapsed, the sidebar should open now (State-only view).
         const topBarCollapsed = topBar.classList.contains('collapsed');
         toggleStatsSidebar(topBarCollapsed);
     }
@@ -796,19 +785,21 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (fraClaimsRadio.checked) {
                 renderFraClaims(stateKey, districtName);
             } else {
-                // If a thematic layer is selected, revert to boundaries when district changes
                 boundariesRadio.checked = true;
                 renderBoundaries(stateKey, districtName);
             }
         }
         
-        // Rule: When a district is selected, hide the sidebar.
         toggleStatsSidebar(false); 
     }
 
 
-    // --- Initialization: Populate State Dropdown ---
+    // --- Initialization and Event Listeners ---
 
+    // 1. Initial Claims Generation
+    generateAllFraClaims(claimDateInput.value);
+
+    // 2. Populate State Dropdown
     Object.keys(stateData).forEach(key => {
         const option = document.createElement('option');
         option.value = key;
@@ -816,9 +807,25 @@ document.addEventListener('DOMContentLoaded', () => {
         stateDropdown.appendChild(option);
     });
 
-    // --- Event Listeners ---
+    // 3. Date Change Listener (NEW)
+    claimDateInput.addEventListener('change', (event) => {
+        const dateValue = event.target.value;
+        const stateKey = stateDropdown.value;
+        const districtName = districtDropdown.value;
 
-    // Top Bar Collapse Toggle (Controls control panel and sidebar visibility based on rules)
+        if (stateKey && fraClaimsRadio.checked) {
+            updateStatus(`Regenerating claims based on new date (${dateValue})...`);
+            generateAllFraClaims(dateValue);
+            renderFraClaims(stateKey, districtName || null);
+        } else if (stateKey) {
+            updateStatus(`Date updated to ${dateValue}. Switch to 'Areas claimed under FRA' to see changes.`);
+        } else {
+            generateAllFraClaims(dateValue); // Update global data even without a state selected
+            updateStatus(`Date updated to ${dateValue}. Please select a state.`);
+        }
+    });
+
+    // 4. Other Event Listeners (Unchanged logic)
     collapseButton.addEventListener('click', () => {
         const isCollapsed = topBar.classList.toggle('collapsed');
         collapseButton.setAttribute('aria-expanded', !isCollapsed);
@@ -827,7 +834,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setTimeout(() => {
             map.invalidateSize();
-            // Only try to fit bounds if administrative view is active
             if (adminViewRadio.checked) {
                 const layerToFit = thematicLayer || fraClaimsLayer || currentLayer; 
                 if (layerToFit) {
@@ -840,26 +846,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 300); 
     });
 
-    // NEW: Base Layer Radio Button Change
     adminViewRadio.addEventListener('change', () => switchBaseLayer('administrative'));
     satViewRadio.addEventListener('change', () => switchBaseLayer('satellite'));
-
-
-    // NEW: Sidebar Manual Toggle Button
     sidebarToggleButton.addEventListener('click', () => {
         const isCurrentlyHidden = statsSidebar.classList.contains('hidden');
         toggleStatsSidebar(isCurrentlyHidden); 
     });
-
-
-    // State Dropdown Change
     stateDropdown.addEventListener('change', (event) => {
         const stateKey = event.target.value;
         districtDropdown.value = "";
         handleStateSelection(stateKey);
     });
-
-    // District Dropdown Change
     districtDropdown.addEventListener('change', (event) => {
         const districtName = event.target.value;
         const stateKey = stateDropdown.value;
@@ -868,8 +865,6 @@ document.addEventListener('DOMContentLoaded', () => {
             handleDistrictSelection(stateKey, districtName);
         }
     });
-
-    // Layer Radio Button Change
     document.querySelectorAll('input[name="layer-type"]').forEach(radio => {
         radio.addEventListener('change', (event) => {
             const stateKey = stateDropdown.value;
@@ -882,22 +877,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            // If satellite view is active, switch to administrative first
             if (satViewRadio.checked) {
                 adminViewRadio.checked = true;
                 switchBaseLayer('administrative');
             }
 
-
             const thematicLayers = ['crop-land', 'water-bodies', 'homesteads', 'forests']; 
 
-            // If a thematic layer is selected, and a district is selected, clear district
             if (thematicLayers.includes(layerType) && districtName) {
                 districtDropdown.value = "";
                 handleStateSelection(stateKey);
             }
 
-            // Hide sidebar and render the selected layer
             if (thematicLayers.includes(layerType)) {
                 toggleStatsSidebar(false);
                 renderThematicLayer(stateKey, layerType);
@@ -909,6 +900,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Initial message
     updateStatus('Welcome to the FRA Atlas. Select a state to begin.');
 });
