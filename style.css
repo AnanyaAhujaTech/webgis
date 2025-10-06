@@ -97,8 +97,8 @@ html, body {
 }
 
 #top-bar:not(.collapsed) #control-content {
-    /* INCREASED EXPANDED HEIGHT: Adjusted from 250px to 280px */
-    max-height: 280px; 
+    /* MODIFIED: Increased max-height to fit new filters */
+    max-height: 400px; 
     opacity: 1;
     margin-top: 5px; /* Reduced spacing */
     padding-bottom: 5px;
@@ -137,8 +137,8 @@ label {
     font-size: 0.9em;
 }
 
-/* Dropdown and Date input styling */
-#state-dropdown, #district-dropdown, #claim-date {
+/* Dropdown and Date input styling (Updated selector for new dropdowns) */
+#state-dropdown, #district-dropdown, #claim-date, #village-dropdown, #tehsil-dropdown, #tribal-group-dropdown {
     padding: 6px; /* Reduced padding */
     border-radius: 4px;
     border: 1px solid #c8e6c9;
@@ -149,7 +149,7 @@ label {
     font-size: 0.9em;
 }
 
-#district-dropdown:disabled {
+#district-dropdown:disabled, #village-dropdown:disabled, #tehsil-dropdown:disabled, #tribal-group-dropdown:disabled {
     background-color: #aaa;
     color: #666;
     cursor: not-allowed;
@@ -174,9 +174,9 @@ label {
     transition: padding-top 0.3s ease, margin-right 0.3s ease;
 }
 
-/* Adjusted to new expanded height: Adjusted from 240px to 270px */
+/* MODIFIED: Adjusted map padding to match new expanded height */
 #top-bar:not(.collapsed) + #map { 
-    padding-top: 270px;
+    padding-top: 400px;
 }
 
 /* --- Statistics Sidebar Styling --- */
@@ -277,8 +277,9 @@ label {
 
 /* Responsive adjustment */
 @media (max-width: 768px) {
+    /* MODIFIED: Increased padding top for small screens to accommodate all controls */
     #top-bar:not(.collapsed) + #map {
-        padding-top: 380px; /* Adjusted to 380px for stacked content on small screens */
+        padding-top: 500px; 
     }
     #stats-sidebar {
         width: 100%;
